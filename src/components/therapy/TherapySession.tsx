@@ -110,7 +110,7 @@ export default function TherapySession() {
   // --- Initial Greeting ---
   useEffect(() => {
     if (!showDisclaimer && history.length === 0 && sessionState === 'idle') {
-      const initialGreeting = "Hello, I'm Bloom. I'm here to listen. How are you feeling today?";
+      const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
       setSessionState('thinking'); // AI is preparing to 'speak' the greeting
       
       (async () => {
@@ -132,7 +132,7 @@ export default function TherapySession() {
           }
       })();
     }
-  }, [showDisclaimer, history, sessionState, voice, playAudio]);
+  }, [showDisclaimer, history.length, sessionState, voice, playAudio]);
 
 
   // --- Speech Recognition Setup ---

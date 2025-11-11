@@ -113,7 +113,7 @@ export default function SettingsForm() {
     
     setPlayingVoice(voiceId);
     try {
-        const sampleText = "Hi there, I am Bloom AI, your personal AI Therapy assistant";
+        const sampleText = "Hi there, I am Bud AI, your personal AI Therapy assistant";
         const { audio } = await generateSpeechSample({ text: sampleText, voiceName: voiceId });
 
         if (audioRef.current) {
