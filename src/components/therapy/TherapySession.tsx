@@ -290,7 +290,7 @@ export default function TherapySession() {
             className={cn(
                 "rounded-full w-20 h-20 transition-all duration-300 shadow-lg",
                  sessionState === 'listening' 
-                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
+                    ? "bg-red-500 hover:bg-red-600"
                     : "bg-primary",
                  isMicButtonDisabled && "bg-gray-700 opacity-50 cursor-not-allowed"
             )}
