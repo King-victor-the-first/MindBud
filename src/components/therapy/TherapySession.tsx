@@ -144,7 +144,7 @@ export default function TherapySession() {
           }
       })();
     }
-  }, [showDisclaimer]);
+  }, [showDisclaimer, history, sessionState, voice, playAudio]);
 
 
   // --- Speech Recognition Setup ---
@@ -203,7 +203,7 @@ export default function TherapySession() {
         audioRef.current.src = "";
       }
     };
-  }, [handleSpeech]); // Only depends on handleSpeech now
+  }, [handleSpeech, sessionState]); // Re-create listeners if state logic changes
 
   const toggleListen = () => {
     if (sessionState === 'listening') {
