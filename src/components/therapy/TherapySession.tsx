@@ -88,11 +88,13 @@ export default function TherapySession() {
       
       setTranscript((prev) => [...prev, aiMessage]);
       setHistory((prev) => [...prev, { role: 'model', content: [{ text: result.response }] }]);
+
+      const isCrisisResponse = result.response.includes("988");
       
-      if (result.audio) {
+      if (result.audio && !isCrisisResponse) {
         playAudio(result.audio);
       } else {
-        // If there's no audio (e.g., TTS failed), just go to idle state.
+        // If there's no audio (e.g., TTS failed) or it's a crisis response, just go to idle state.
         setSessionState('idle');
       }
 
@@ -111,11 +113,11 @@ export default function TherapySession() {
   useEffect(() => {
     if (!showDisclaimer && history.length === 0 && sessionState === 'idle') {
       const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
-      setSessionState('thinking'); // AI is preparing to 'speak' the greeting
       
-      (async () => {
+       (async () => {
+          setSessionState('thinking'); // AI is preparing to 'speak' the greeting
           try {
-            const result = await therapyConversation({ history: [], message: initialGreeting, voiceName: voice });
+            const result = await therapyConversation({ history: [], message: "", voiceName: voice });
             const aiMessage: TranscriptItem = { speaker: "ai", text: result.response };
             
             setTranscript((prev) => [...prev, aiMessage]);
@@ -128,11 +130,14 @@ export default function TherapySession() {
             }
           } catch(e) {
             console.error("Failed to generate initial greeting", e);
+             const aiMessage: TranscriptItem = { speaker: "ai", text: initialGreeting };
+            setTranscript([aiMessage]);
+            setHistory([{ role: 'model', content: [{ text: initialGreeting }] }]);
             setSessionState('idle');
           }
       })();
     }
-  }, [showDisclaimer, history.length, sessionState, voice, playAudio]);
+  }, [showDisclaimer, history.length, voice, playAudio]);
 
 
   // --- Speech Recognition Setup ---
@@ -237,6 +242,7 @@ export default function TherapySession() {
   }
 
   const isMicButtonDisabled = sessionState === 'speaking' || sessionState === 'thinking';
+  const lastMessage = transcript.length > 0 ? transcript[transcript.length-1] : null;
   
   return (
     <div className="h-screen w-full flex flex-col bg-gray-900 text-white">
@@ -255,19 +261,22 @@ export default function TherapySession() {
                 />
             )}
         </div>
-        <h2 className="text-2xl font-bold mt-6 font-headline">AI Therapist</h2>
+        <h2 className="text-2xl font-bold mt-6 font-headline">Bud AI</h2>
         <p className="text-gray-300">Session in progress...</p>
         <div className="mt-8 text-lg text-gray-200 h-20 flex items-center justify-center">
            {getStatusContent()}
         </div>
 
         <div className="absolute bottom-32 left-4 right-4 text-center max-h-48 overflow-y-auto">
-            {transcript.length > 0 && transcript[transcript.length-1].speaker === 'ai' && <p className={cn(
-                "text-xl transition-opacity duration-300 text-primary/90"
-            )}>"{transcript[transcript.length-1].text}"</p>}
-             {transcript.length > 0 && transcript[transcript.length-1].speaker === 'user' && transcript[transcript.length-1].text.trim() && <p className={cn(
-                "text-xl transition-opacity duration-300 text-white"
-            )}>"{transcript[transcript.length-1].text}"</p>}
+            {lastMessage && (
+              <p className={cn(
+                  "text-xl transition-opacity duration-300",
+                  lastMessage.speaker === 'ai' && lastMessage.text.includes("988") ? "text-destructive font-semibold" :
+                  lastMessage.speaker === 'ai' ? "text-primary/90" : "text-white"
+              )}>
+                "{lastMessage.text}"
+              </p>
+            )}
         </div>
 
       </div>
@@ -293,5 +302,3 @@ export default function TherapySession() {
     </div>
   );
 }
-
-    
