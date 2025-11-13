@@ -144,7 +144,7 @@ export default function TherapySession() {
           }
       })();
     }
-  }, [showDisclaimer, history, sessionState, voice, playAudio]);
+  }, [showDisclaimer, history.length, sessionState, voice, playAudio]);
 
 
   // --- Speech Recognition Setup ---
@@ -183,7 +183,6 @@ export default function TherapySession() {
     };
     
     recognition.onresult = (event) => {
-        setSessionState('idle'); // Stop listening visually
         const finalTranscript = Array.from(event.results)
             .map(result => result[0])
             .map(result => result.transcript)
@@ -191,24 +190,31 @@ export default function TherapySession() {
 
         if (finalTranscript.trim()) {
             handleSpeech(finalTranscript.trim());
+        } else {
+            setSessionState('idle');
         }
     };
 
     return () => {
       if (recognitionRef.current) {
+        recognitionRef.current.onstart = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onresult = null;
         recognitionRef.current.abort();
       }
       if(audioRef.current) {
         audioRef.current.pause();
         audioRef.current.src = "";
+        audioRef.current.onended = null;
+        audioRef.current.onerror = null;
       }
     };
-  }, [handleSpeech, sessionState]); // Re-create listeners if state logic changes
+  }, [handleSpeech, sessionState]);
 
   const toggleListen = () => {
     if (sessionState === 'listening') {
       recognitionRef.current?.stop();
-      setSessionState('idle');
     } else if (sessionState === 'idle') {
       recognitionRef.current?.start();
     }
