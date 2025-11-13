@@ -41,60 +41,67 @@ export default function TherapySession() {
   }, []);
 
   const playAudio = useCallback((audioDataUri: string) => {
-    if (audioRef.current) {
-      setSessionState('speaking');
-      audioRef.current.src = audioDataUri;
-      
-      const playPromise = audioRef.current.play();
+    return new Promise<void>((resolve) => {
+        if (audioRef.current) {
+            setSessionState('speaking');
+            audioRef.current.src = audioDataUri;
+            
+            audioRef.current.onended = () => {
+                setSessionState('idle');
+                resolve();
+            };
+            
+            audioRef.current.onerror = (e) => {
+                console.error("Audio element error:", e);
+                setSessionState('idle');
+                resolve();
+            };
 
-      if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.error("Error playing audio:", error);
-            // If play fails, go back to idle to allow user to try again.
+            const playPromise = audioRef.current.play();
+            if (playPromise) {
+                playPromise.catch(error => {
+                    console.error("Error playing audio:", error);
+                    setSessionState('idle');
+                    resolve();
+                });
+            } else {
+                 setSessionState('idle');
+                 resolve();
+            }
+        } else {
             setSessionState('idle');
-        });
-      }
-
-      audioRef.current.onended = () => {
-        // After audio finishes, go back to idle state.
-        setSessionState('idle');
-      };
-      
-      audioRef.current.onerror = (e) => {
-          console.error("Audio element error:", e);
-          setSessionState('idle');
-      };
-    }
+            resolve();
+        }
+    });
   }, []);
 
 
   const handleSpeech = useCallback(async (text: string) => {
     if (!text) {
-        setSessionState('idle'); // Nothing was said, go back to idle.
+        setSessionState('idle');
         return;
     }
 
-    setSessionState('thinking'); // Move to thinking state while waiting for AI.
+    setSessionState('thinking');
 
     const userMessage: TranscriptItem = { speaker: "user", text };
     setTranscript((prev) => [...prev, userMessage]);
-
-    const currentHistory: MessageData[] = [...history, { role: 'user', content: [{ text }] }];
-    setHistory(currentHistory);
+    
+    const newHistory: MessageData[] = [...history, { role: 'user', content: [{ text }] }];
+    setHistory(newHistory);
     
     try {
-      const result = await therapyConversation({ history: currentHistory, message: text, voiceName: voice });
+      const result = await therapyConversation({ history: newHistory, message: text, voiceName: voice });
       const aiMessage: TranscriptItem = { speaker: "ai", text: result.response };
       
       setTranscript((prev) => [...prev, aiMessage]);
       setHistory((prev) => [...prev, { role: 'model', content: [{ text: result.response }] }]);
-
-      const isCrisisResponse = result.response.includes("988");
       
+      const isCrisisResponse = result.response.includes("988");
+
       if (result.audio && !isCrisisResponse) {
-        playAudio(result.audio);
+        await playAudio(result.audio);
       } else {
-        // If there's no audio (e.g., TTS failed) or it's a crisis response, just go to idle state.
         setSessionState('idle');
       }
 
@@ -104,7 +111,7 @@ export default function TherapySession() {
       const aiMessage: TranscriptItem = { speaker: "ai", text: errorMessage };
       setTranscript((prev) => [...prev, aiMessage]);
       setHistory((prev) => [...prev, { role: 'model', content: [{text: errorMessage}] }]);
-      setSessionState('idle'); // Go to idle state on error.
+      setSessionState('idle');
     }
   }, [history, voice, playAudio]);
 
@@ -115,16 +122,16 @@ export default function TherapySession() {
       const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
       
        (async () => {
-          setSessionState('thinking'); // AI is preparing to 'speak' the greeting
+          setSessionState('thinking');
           try {
             const result = await therapyConversation({ history: [], message: "", voiceName: voice });
             const aiMessage: TranscriptItem = { speaker: "ai", text: result.response };
             
-            setTranscript((prev) => [...prev, aiMessage]);
-            setHistory((prev) => [...prev, { role: 'model', content: [{ text: result.response }] }]);
+            setTranscript([aiMessage]);
+            setHistory([{ role: 'model', content: [{ text: result.response }] }]);
             
             if (result.audio) {
-              playAudio(result.audio);
+              await playAudio(result.audio);
             } else {
               setSessionState('idle');
             }
@@ -137,7 +144,7 @@ export default function TherapySession() {
           }
       })();
     }
-  }, [showDisclaimer, history.length, voice, playAudio]);
+  }, [showDisclaimer]);
 
 
   // --- Speech Recognition Setup ---
@@ -148,9 +155,7 @@ export default function TherapySession() {
     }
 
     const SpeechRecognition = window.webkitSpeechRecognition;
-    if (!recognitionRef.current) {
-        recognitionRef.current = new SpeechRecognition();
-    }
+    recognitionRef.current = new SpeechRecognition();
     const recognition = recognitionRef.current;
     
     recognition.continuous = false;
@@ -158,12 +163,11 @@ export default function TherapySession() {
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-        if (sessionState !== 'listening') setSessionState('listening');
+        setSessionState('listening');
     };
     
     recognition.onend = () => {
-      // Only set to idle if we were in the listening state.
-      // This prevents onend from interfering when we are thinking or speaking.
+      // Only change state if we are currently in the listening state
       if (sessionState === 'listening') {
         setSessionState('idle');
       }
@@ -179,6 +183,7 @@ export default function TherapySession() {
     };
     
     recognition.onresult = (event) => {
+        setSessionState('idle'); // Stop listening visually
         const finalTranscript = Array.from(event.results)
             .map(result => result[0])
             .map(result => result.transcript)
@@ -186,8 +191,6 @@ export default function TherapySession() {
 
         if (finalTranscript.trim()) {
             handleSpeech(finalTranscript.trim());
-        } else {
-            setSessionState('idle');
         }
     };
 
@@ -200,11 +203,12 @@ export default function TherapySession() {
         audioRef.current.src = "";
       }
     };
-  }, [handleSpeech, sessionState]);
+  }, [handleSpeech]); // Only depends on handleSpeech now
 
   const toggleListen = () => {
     if (sessionState === 'listening') {
       recognitionRef.current?.stop();
+      setSessionState('idle');
     } else if (sessionState === 'idle') {
       recognitionRef.current?.start();
     }
@@ -212,7 +216,6 @@ export default function TherapySession() {
 
   const handleDisclaimerAgree = () => {
       setShowDisclaimer(false);
-      setSessionState('idle');
   }
 
   const getStatusContent = () => {
@@ -287,7 +290,7 @@ export default function TherapySession() {
             className={cn(
                 "rounded-full w-20 h-20 transition-all duration-300 shadow-lg",
                  sessionState === 'listening' 
-                    ? "bg-red-500 hover:bg-red-600"
+                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
                     : "bg-primary",
                  isMicButtonDisabled && "bg-gray-700 opacity-50 cursor-not-allowed"
             )}
