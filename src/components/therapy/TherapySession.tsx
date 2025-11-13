@@ -163,45 +163,48 @@ export default function TherapySession() {
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-        setSessionState('listening');
+      setSessionState('listening');
     };
     
     recognition.onend = () => {
       // Only change state if we are currently in the listening state
+      // This can be triggered by stop() or by natural end of speech
       if (sessionState === 'listening') {
         setSessionState('idle');
       }
     };
     
     recognition.onerror = (event) => {
-        if (event.error !== 'aborted' && event.error !== 'no-speech') {
-            console.error("Speech recognition error:", event.error);
-        }
-        if (sessionState === 'listening') {
-            setSessionState('idle');
-        }
+      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        console.error("Speech recognition error:", event.error);
+      }
+      if (sessionState === 'listening') {
+        setSessionState('idle');
+      }
     };
     
     recognition.onresult = (event) => {
-        const finalTranscript = Array.from(event.results)
-            .map(result => result[0])
-            .map(result => result.transcript)
-            .join('');
+      setSessionState('thinking'); // Move to thinking state as soon as we have a result.
+      const finalTranscript = Array.from(event.results)
+          .map(result => result[0])
+          .map(result => result.transcript)
+          .join('');
 
-        if (finalTranscript.trim()) {
-            handleSpeech(finalTranscript.trim());
-        } else {
-            setSessionState('idle');
-        }
+      if (finalTranscript.trim()) {
+          handleSpeech(finalTranscript.trim());
+      } else {
+          setSessionState('idle');
+      }
     };
 
+    // Cleanup function
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.onstart = null;
         recognitionRef.current.onend = null;
         recognitionRef.current.onerror = null;
         recognitionRef.current.onresult = null;
-        recognitionRef.current.abort();
+        recognitionRef.current.abort(); // Stop any active recognition
       }
       if(audioRef.current) {
         audioRef.current.pause();
@@ -210,7 +213,7 @@ export default function TherapySession() {
         audioRef.current.onerror = null;
       }
     };
-  }, [handleSpeech, sessionState]);
+  }, [handleSpeech, sessionState]); // Rerun setup if handleSpeech changes
 
   const toggleListen = () => {
     if (sessionState === 'listening') {
@@ -297,7 +300,7 @@ export default function TherapySession() {
                 "rounded-full w-20 h-20 transition-all duration-300 shadow-lg",
                  sessionState === 'listening' 
                     ? "bg-red-500 hover:bg-red-600"
-                    : "bg-primary",
+                    : "bg-green-500 hover:bg-green-600",
                  isMicButtonDisabled && "bg-gray-700 opacity-50 cursor-not-allowed"
             )}
             disabled={isMicButtonDisabled}
