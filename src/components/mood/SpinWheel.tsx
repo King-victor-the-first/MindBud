@@ -21,7 +21,7 @@ const segmentColors = [
 export default function SpinWheel() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [currentRotation, setCurrentRotation] = useState(0);
+  const [rotation, setRotation] = useState(0);
   const wheelRef = useRef<HTMLDivElement>(null);
 
   const handleSpin = () => {
@@ -29,48 +29,37 @@ export default function SpinWheel() {
 
     setIsSpinning(true);
     setResult(null);
+
+    const randomExtraSpins = Math.floor(Math.random() * 3) + 5; // 5 to 7 full rotations
+    const randomStopIndex = Math.floor(Math.random() * wheelTasks.length);
+    const stopAngle = randomStopIndex * segmentAngle;
     
-    // Start the continuous animation
-    wheelRef.current.style.transition = 'none';
-    wheelRef.current.style.transform = `rotate(${currentRotation}deg)`;
-    void wheelRef.current.offsetWidth; // Force reflow
-    wheelRef.current.classList.add("animate-spin-continuous");
+    // Calculate final rotation: current rotation + extra spins + angle to stop on the segment
+    // The pointer is at the top (0 degrees), so we need to align the chosen segment there.
+    // We add a bit of an offset to center the pointer within the segment.
+    const finalRotation = rotation + (randomExtraSpins * 360) + (360 - stopAngle) - (segmentAngle / 2);
+    
+    setRotation(finalRotation);
 
-    // After a short time, decide where to stop
+    const spinDuration = 6000; // 6 seconds for the spin
+
+    if(wheelRef.current) {
+      wheelRef.current.style.transition = `transform ${spinDuration}ms cubic-bezier(.17,.93,.3,1)`;
+      wheelRef.current.style.transform = `rotate(${finalRotation}deg)`;
+    }
+
     setTimeout(() => {
-        if (!wheelRef.current) return;
-
-        const computedStyle = window.getComputedStyle(wheelRef.current);
-        const transform = computedStyle.transform;
-      
-        let currentAngle = 0;
-        if (transform !== 'none') {
-            const matrix = new DOMMatrix(transform);
-            currentAngle = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
-        }
-
-        const randomExtraSpins = Math.floor(Math.random() * 2) + 4; // Spin 4-5 more times
-        const randomStopIndex = Math.floor(Math.random() * wheelTasks.length);
-        // Calculate the final angle to land on the chosen segment
-        const finalAngle = currentAngle + (randomExtraSpins * 360) - (currentAngle % 360) - (randomStopIndex * segmentAngle) - (segmentAngle / 2);
-        
-        // Stop the continuous animation
-        wheelRef.current.classList.remove("animate-spin-continuous");
-        void wheelRef.current.offsetWidth; // Force reflow
-
-        // Apply transition for slow-down effect
-        wheelRef.current.style.transition = 'transform 4s cubic-bezier(0.25, 1, 0.5, 1)';
-        wheelRef.current.style.transform = `rotate(${finalAngle}deg)`;
-        
-        setCurrentRotation(finalAngle);
-        
-        // After the slow-down transition ends, set the result
-        setTimeout(() => {
-            setResult(wheelTasks[randomStopIndex].text);
-            setIsSpinning(false);
-        }, 4000); // Corresponds to the transition duration
-
-    }, 200); // Start the stopping sequence after 200ms
+      setResult(wheelTasks[randomStopIndex].text);
+      setIsSpinning(false);
+      // Optional: Reset transition after spin to allow for immediate re-spin without visual glitches
+      if(wheelRef.current) {
+        wheelRef.current.style.transition = 'none';
+        // Normalize rotation to prevent excessively large numbers
+        const normalizedRotation = finalRotation % 360;
+        wheelRef.current.style.transform = `rotate(${normalizedRotation}deg)`;
+        setRotation(normalizedRotation);
+      }
+    }, spinDuration);
   };
 
   const getButtonContent = () => {
@@ -107,10 +96,7 @@ export default function SpinWheel() {
 
         <div
           ref={wheelRef}
-          className={cn(
-            "relative w-full h-full rounded-full border-4 border-muted shadow-lg overflow-hidden",
-            isSpinning && 'animate-pulse-glow'
-          )}
+          className="relative w-full h-full rounded-full border-4 border-muted shadow-lg overflow-hidden"
         >
           {wheelTasks.map((task, index) => {
             const Icon = task.icon;
