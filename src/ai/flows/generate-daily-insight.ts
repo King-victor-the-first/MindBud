@@ -71,7 +71,15 @@ const generateDailyInsightFlow = ai.defineFlow(
     outputSchema: GenerateDailyInsightOutputSchema,
   },
   async (input) => {
-    const { output } = await insightPrompt(input);
-    return output!;
+    try {
+      const { output } = await insightPrompt(input);
+      return output!;
+    } catch (error) {
+      console.error("Error generating daily insight, returning fallback.", error);
+      // Return a generic, safe fallback insight if the AI model fails.
+      return {
+        insight: `Every day is a new opportunity, ${input.userName}. Remember to be kind to yourself as you navigate your feelings.`,
+      };
+    }
   }
 );
