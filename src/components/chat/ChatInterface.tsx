@@ -182,7 +182,7 @@ export default function ChatInterface() {
 
   return (
     <div className="flex-1 flex flex-col chat-background-pattern">
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+      <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
         <div className="space-y-1">
           {messagesLoading && (
             <div className="flex justify-center items-center h-full">
@@ -288,7 +288,7 @@ export default function ChatInterface() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="p-4 bg-card border-t">
+      <div className="p-4 bg-card border-t flex-shrink-0">
         {replyTo && (
             <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm">
                 <div>
@@ -337,5 +337,4 @@ export default function ChatInterface() {
     </div>
   );
 }
-
     
