@@ -91,7 +91,7 @@ export default function SpinWheel() {
     <div className="relative flex flex-col items-center justify-center p-4">
       <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center mb-8">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10">
-          <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[30px] border-b-primary" />
+          <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-primary" />
         </div>
 
         <div
@@ -124,7 +124,7 @@ export default function SpinWheel() {
         </div>
         
         {/* Center Hub */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-card rounded-full border-4 border-muted shadow-inner z-10" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-card rounded-full border-4 border-muted shadow-inner z-10" />
       </div>
 
       <Button onClick={handleSpin} size="lg" className="rounded-full shadow-lg w-48" disabled={isSpinning}>
