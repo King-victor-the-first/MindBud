@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import type { ScheduledSession } from "@/lib/types";
+import { isToday, parse } from "date-fns";
 
 const timeSlots = ["09:00 AM", "11:00 AM", "02:00 PM", "04:00 PM", "07:00 PM"];
 
@@ -66,6 +68,8 @@ export default function TherapyScheduler() {
     }
   };
 
+  const now = new Date();
+
   return (
     <Card>
       <CardContent className="p-2 sm:p-6 flex flex-col lg:flex-row gap-6 lg:gap-8">
@@ -73,7 +77,10 @@ export default function TherapyScheduler() {
           <Calendar
             mode="single"
             selected={date}
-            onSelect={setDate}
+            onSelect={(selectedDate) => {
+                setDate(selectedDate);
+                setSelectedTime(null); // Reset time when date changes
+            }}
             className="rounded-md border"
             disabled={(date) => date < new Date(new Date().toDateString())}
           />
@@ -84,21 +91,27 @@ export default function TherapyScheduler() {
             <span className="text-primary">{date ? date.toLocaleDateString() : "..."}</span>
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {timeSlots.map((time) => (
-              <Button
-                key={time}
-                variant="outline"
-                className={cn(
-                  "w-full",
-                  selectedTime === time && "bg-primary text-primary-foreground"
-                )}
-                onClick={() => setSelectedTime(time)}
-              >
-                {time}
-              </Button>
-            ))}
+            {timeSlots.map((time) => {
+              const sessionDateTime = date ? parse(time, "hh:mm a", new Date(date)) : new Date();
+              const isPastTime = date && isToday(date) && sessionDateTime < now;
+
+              return (
+                <Button
+                  key={time}
+                  variant="outline"
+                  className={cn(
+                    "w-full",
+                    selectedTime === time && "bg-primary text-primary-foreground"
+                  )}
+                  onClick={() => setSelectedTime(time)}
+                  disabled={isPastTime}
+                >
+                  {time}
+                </Button>
+              )
+            })}
           </div>
-          <Button onClick={handleSchedule} className="w-full mt-6" size="lg">
+          <Button onClick={handleSchedule} className="w-full mt-6" size="lg" disabled={!selectedTime}>
             Schedule Session
           </Button>
         </div>
