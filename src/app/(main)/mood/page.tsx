@@ -9,11 +9,11 @@ import { ListChecks } from "lucide-react";
 export default function MoodPage() {
 
   const moodHeadings = [
-    "How are you feeling?",
     "How are you feeling right now?",
     "What's your current mood?",
-    "Time for a mood check-in.",
-    "Let's log your mood."
+    "Time for a quick mood check.",
+    "Let's log how you're feeling at this moment.",
+    "Check in with your present mood."
   ];
 
   const randomHeading = moodHeadings[Math.floor(Math.random() * moodHeadings.length)];
