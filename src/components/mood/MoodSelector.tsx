@@ -112,12 +112,12 @@ export default function MoodSelector() {
           <button
             key={mood.label}
             onClick={() => handleMoodSelect(mood)}
-            className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-all"
+            className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-all group"
             aria-label={`Select mood: ${mood.label}`}
           >
             <span
               className={cn(
-                "text-4xl sm:text-5xl grayscale transition-all duration-300 transform hover:scale-110",
+                "text-4xl sm:text-5xl grayscale transition-all duration-300 transform group-hover:scale-110 group-hover:-translate-y-2 group-hover:rotate-6",
                 currentMood === mood.label && "grayscale-0 scale-125"
               )}
             >
