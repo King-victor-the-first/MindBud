@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, PhoneOff, Loader2, BrainCircuit } from "lucide-react";
@@ -10,11 +10,9 @@ import { cn } from "@/lib/utils";
 import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
 import type { MessageData } from 'genkit/ai';
-
-type TranscriptItem = {
-  speaker: "user" | "ai";
-  text: string;
-};
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
+import { collection, query, orderBy, serverTimestamp } from "firebase/firestore";
+import type { TherapyMessage } from "@/lib/types";
 
 // A state machine to manage the session's flow and prevent race conditions.
 type SessionState = 'idle' | 'listening' | 'thinking' | 'speaking';
@@ -23,12 +21,28 @@ export default function TherapySession() {
   const [isMounted, setIsMounted] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [sessionState, setSessionState] = useState<SessionState>('idle');
-  const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
-  const [history, setHistory] = useState<MessageData[]>([]);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
+  const params = useParams();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [voice, setVoice] = useState('Algenib');
+
+  const sessionId = params.id as string;
+
+  const messagesQuery = useMemoFirebase(() => {
+    if (!user || !sessionId) return null;
+    return query(
+      collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`),
+      orderBy("createdAt", "asc")
+    );
+  }, [user, firestore, sessionId]);
+
+  const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
+
+  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content })) : [];
+  const transcript = messages ? messages.map(m => ({ speaker: m.role, text: m.content[0].text })) : [];
 
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai");
 
@@ -77,25 +91,23 @@ export default function TherapySession() {
 
 
   const handleSpeech = useCallback(async (text: string) => {
-    if (!text) {
+    if (!text || !user || !messagesQuery) {
         setSessionState('idle');
         return;
     }
 
     setSessionState('thinking');
 
-    const userMessage: TranscriptItem = { speaker: "user", text };
-    setTranscript((prev) => [...prev, userMessage]);
-    
-    const newHistory: MessageData[] = [...history, { role: 'user', content: [{ text }] }];
-    setHistory(newHistory);
+    const userMessage: MessageData = { role: 'user', content: [{ text }] };
+    const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
+    await addDocumentNonBlocking(messagesCollectionRef, { ...userMessage, createdAt: serverTimestamp() });
     
     try {
-      const result = await therapyConversation({ history: newHistory, message: text, voiceName: voice });
-      const aiMessage: TranscriptItem = { speaker: "ai", text: result.response };
-      
-      setTranscript((prev) => [...prev, aiMessage]);
-      setHistory((prev) => [...prev, { role: 'model', content: [{ text: result.response }] }]);
+      const currentHistory = [...history, userMessage];
+      const result = await therapyConversation({ history: currentHistory, message: text, voiceName: voice });
+
+      const aiMessage: MessageData = { role: 'model', content: [{ text: result.response }] };
+      await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
       
       const isCrisisResponse = result.response.includes("988");
 
@@ -108,27 +120,25 @@ export default function TherapySession() {
     } catch (error) {
       console.error("Error with therapy conversation flow:", error);
       const errorMessage = "I'm having a little trouble connecting right now. Please give me a moment.";
-      const aiMessage: TranscriptItem = { speaker: "ai", text: errorMessage };
-      setTranscript((prev) => [...prev, aiMessage]);
-      setHistory((prev) => [...prev, { role: 'model', content: [{text: errorMessage}] }]);
+      const aiMessage: MessageData = { role: 'model', content: [{text: errorMessage}] };
+      await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
       setSessionState('idle');
     }
-  }, [history, voice, playAudio]);
+  }, [user, sessionId, firestore, history, voice, playAudio, messagesQuery]);
 
 
   // --- Initial Greeting ---
   useEffect(() => {
-    if (!showDisclaimer && history.length === 0 && sessionState === 'idle') {
+    if (!showDisclaimer && !messagesLoading && messages?.length === 0 && sessionState === 'idle' && user && messagesQuery) {
       const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
       
        (async () => {
           setSessionState('thinking');
+          const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
           try {
             const result = await therapyConversation({ history: [], message: "", voiceName: voice });
-            const aiMessage: TranscriptItem = { speaker: "ai", text: result.response };
-            
-            setTranscript([aiMessage]);
-            setHistory([{ role: 'model', content: [{ text: result.response }] }]);
+            const aiMessage: MessageData = { role: 'model', content: [{ text: result.response }] };
+            await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
             
             if (result.audio) {
               await playAudio(result.audio);
@@ -137,14 +147,13 @@ export default function TherapySession() {
             }
           } catch(e) {
             console.error("Failed to generate initial greeting", e);
-             const aiMessage: TranscriptItem = { speaker: "ai", text: initialGreeting };
-            setTranscript([aiMessage]);
-            setHistory([{ role: 'model', content: [{ text: initialGreeting }] }]);
+             const aiMessage: MessageData = { role: 'model', content: [{ text: initialGreeting }] };
+            await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
             setSessionState('idle');
           }
       })();
     }
-  }, [showDisclaimer, history.length, sessionState, voice, playAudio]);
+  }, [showDisclaimer, messages, messagesLoading, sessionState, voice, playAudio, user, firestore, sessionId, messagesQuery]);
 
 
   // --- Speech Recognition Setup ---
@@ -227,6 +236,9 @@ export default function TherapySession() {
   }
 
   const getStatusContent = () => {
+    if (messagesLoading) {
+        return <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Loading session...</div>;
+    }
     switch (sessionState) {
         case 'listening':
             return <p>Listening...</p>;
@@ -252,7 +264,7 @@ export default function TherapySession() {
     return <DisclaimerDialog onAgree={handleDisclaimerAgree} />;
   }
 
-  const isMicButtonDisabled = sessionState === 'speaking' || sessionState === 'thinking';
+  const isMicButtonDisabled = sessionState === 'speaking' || sessionState === 'thinking' || messagesLoading;
   const lastMessage = transcript.length > 0 ? transcript[transcript.length-1] : null;
   
   return (

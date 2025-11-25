@@ -83,3 +83,17 @@ export interface SafetyPlan {
     emergencyResources: SafetyPlanResource[];
     copingStrategies: string;
 }
+
+export interface TherapySession {
+    id: string;
+    userId: string;
+    startedAt: any; // Firestore Timestamp
+    summary?: string;
+}
+
+export interface TherapyMessage {
+    id: string;
+    role: 'user' | 'model';
+    content: { text: string }[];
+    createdAt: any; // Firestore Timestamp
+}

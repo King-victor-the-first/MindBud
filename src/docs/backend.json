@@ -171,6 +171,47 @@
       },
       "required": ["userId", "userName", "createdAt"]
     },
+     "TherapySession": {
+      "title": "Therapy Session",
+      "description": "Represents a single AI therapy session.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "summary": {
+          "type": "string"
+        }
+      }
+    },
+    "TherapyMessage": {
+      "title": "Therapy Message",
+      "description": "A single message within an AI therapy session.",
+      "type": "object",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"]
+        },
+        "content": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "text": { "type": "string" }
+                }
+            }
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
     "Medication": {
       "title": "Medication",
       "description": "Represents a single medication reminder for a user.",
@@ -232,6 +273,18 @@
         "$ref": "#/entities/ChatMessage"
       },
       "description": "Stores messages for the anonymous peer-to-peer group chat."
+    },
+    "/userProfiles/{userId}/therapySessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/TherapySession"
+      },
+      "description": "Stores metadata for an AI therapy session."
+    },
+    "/userProfiles/{userId}/therapySessions/{sessionId}/messages/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/TherapyMessage"
+      },
+      "description": "Stores individual messages for a specific AI therapy session."
     }
   }
 }
