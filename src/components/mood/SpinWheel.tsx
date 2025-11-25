@@ -5,7 +5,7 @@ import { useState, useRef } from "react";
 import { moodBoosters } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Play, Gift, Square } from "lucide-react";
+import { Play, Gift, Loader2 } from "lucide-react";
 
 const wheelTasks = moodBoosters.slice(0, 20);
 const segmentAngle = 360 / wheelTasks.length;
@@ -20,82 +20,75 @@ const segmentColors = [
 
 export default function SpinWheel() {
   const [isSpinning, setIsSpinning] = useState(false);
-  const [isStopping, setIsStopping] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const wheelRef = useRef<HTMLDivElement>(null);
 
-  const handleToggleSpin = () => {
+  const handleSpin = () => {
+    if (isSpinning || !wheelRef.current) return;
+
+    setIsSpinning(true);
     setResult(null);
+    
+    // Start the continuous animation
+    wheelRef.current.style.transition = 'none';
+    wheelRef.current.style.transform = `rotate(${currentRotation}deg)`;
+    void wheelRef.current.offsetWidth; // Force reflow
+    wheelRef.current.classList.add("animate-spin-continuous");
 
-    if (isSpinning) {
-      // --- Stopping the wheel ---
-      if (!wheelRef.current) return;
+    // After a short time, decide where to stop
+    setTimeout(() => {
+        if (!wheelRef.current) return;
+
+        const computedStyle = window.getComputedStyle(wheelRef.current);
+        const transform = computedStyle.transform;
       
-      setIsSpinning(false);
-      setIsStopping(true);
+        let currentAngle = 0;
+        if (transform !== 'none') {
+            const matrix = new DOMMatrix(transform);
+            currentAngle = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
+        }
 
-      const computedStyle = window.getComputedStyle(wheelRef.current);
-      const transform = computedStyle.transform;
-      
-      let currentAngle = 0;
-      if (transform !== 'none') {
-        const matrix = new DOMMatrix(transform);
-        currentAngle = Math.round(Math.atan2(matrix.b, matrix.a) * (180 / Math.PI));
-      }
-
-      const randomExtraSpins = Math.floor(Math.random() * 2) + 3; // Spin 3-4 more times for momentum
-      const randomStopIndex = Math.floor(Math.random() * wheelTasks.length);
-      const finalAngle = currentAngle + (randomExtraSpins * 360) - (currentAngle % 360) - (randomStopIndex * segmentAngle) - (segmentAngle / 2);
-      
-      // Remove the animation class
-      wheelRef.current.classList.remove("animate-spin-continuous");
-
-      // CRITICAL: Force browser reflow to apply the class removal before adding the transition.
-      void wheelRef.current.offsetWidth;
-
-      // Apply the transition for the slow-down effect.
-      wheelRef.current.style.transition = 'transform 2.5s ease-out';
-      wheelRef.current.style.transform = `rotate(${finalAngle}deg)`;
-
-      setCurrentRotation(finalAngle);
-      
-      setTimeout(() => {
-        setResult(wheelTasks[randomStopIndex].text);
-        setIsStopping(false);
-      }, 2500); // Corresponds to the transition duration
-
-    } else {
-      // --- Starting the wheel ---
-      setResult(null);
-      if (wheelRef.current) {
-        wheelRef.current.style.transition = 'none'; // Remove transition before starting animation
-        wheelRef.current.style.transform = `rotate(${currentRotation}deg)`; // Start from last position
+        const randomExtraSpins = Math.floor(Math.random() * 2) + 4; // Spin 4-5 more times
+        const randomStopIndex = Math.floor(Math.random() * wheelTasks.length);
+        // Calculate the final angle to land on the chosen segment
+        const finalAngle = currentAngle + (randomExtraSpins * 360) - (currentAngle % 360) - (randomStopIndex * segmentAngle) - (segmentAngle / 2);
         
-        // CRITICAL: Force reflow before adding animation class
-        void wheelRef.current.offsetWidth;
+        // Stop the continuous animation
+        wheelRef.current.classList.remove("animate-spin-continuous");
+        void wheelRef.current.offsetWidth; // Force reflow
 
-        wheelRef.current.classList.add("animate-spin-continuous");
-      }
-      setIsSpinning(true);
-      setIsStopping(false);
-    }
+        // Apply transition for slow-down effect
+        wheelRef.current.style.transition = 'transform 4s cubic-bezier(0.25, 1, 0.5, 1)';
+        wheelRef.current.style.transform = `rotate(${finalAngle}deg)`;
+        
+        setCurrentRotation(finalAngle);
+        
+        // After the slow-down transition ends, set the result
+        setTimeout(() => {
+            setResult(wheelTasks[randomStopIndex].text);
+            setIsSpinning(false);
+        }, 4000); // Corresponds to the transition duration
+
+    }, 200); // Start the stopping sequence after 200ms
   };
 
   const getButtonContent = () => {
     if (isSpinning) {
       return (
         <>
-          <Square className="mr-2 h-4 w-4 fill-current" />
-          Stop
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Spinning...
         </>
       );
     }
-    if (isStopping) {
-      return "Stopping...";
-    }
     if (result) {
-      return "Spin Again";
+      return (
+        <>
+            <Play className="mr-2 h-4 w-4 fill-current" />
+            Spin Again
+        </>
+      );
     }
     return (
       <>
@@ -115,7 +108,8 @@ export default function SpinWheel() {
         <div
           ref={wheelRef}
           className={cn(
-            "relative w-full h-full rounded-full border-4 border-muted shadow-lg overflow-hidden animate-pulse-glow"
+            "relative w-full h-full rounded-full border-4 border-muted shadow-lg overflow-hidden",
+            isSpinning && 'animate-pulse-glow'
           )}
         >
           {wheelTasks.map((task, index) => {
@@ -144,11 +138,11 @@ export default function SpinWheel() {
         </div>
       </div>
 
-      <Button onClick={handleToggleSpin} size="lg" className="rounded-full shadow-lg w-48" disabled={isStopping}>
+      <Button onClick={handleSpin} size="lg" className="rounded-full shadow-lg w-48" disabled={isSpinning}>
         {getButtonContent()}
       </Button>
 
-      {!isSpinning && !isStopping && result && (
+      {!isSpinning && result && (
         <div className="mt-6 text-center bg-muted/50 p-4 rounded-lg shadow-md max-w-sm animate-in fade-in zoom-in-95">
           <Gift className="w-8 h-8 mx-auto text-primary mb-2" />
           <h3 className="font-headline text-lg font-semibold">Your happy task is:</h3>
