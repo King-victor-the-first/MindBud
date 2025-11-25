@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, PhoneOff, Loader2, BrainCircuit, MicIcon } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Loader2, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
@@ -47,7 +47,7 @@ export default function TherapySession() {
 
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
 
-  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: [{text: m.content[0].text}] })) : [];
+  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content })) : [];
   const transcript = messages ? messages.map(m => ({ speaker: m.role, text: m.content[0].text })) : [];
 
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai");
@@ -227,10 +227,10 @@ export default function TherapySession() {
   }, [showDisclaimer, messages, messagesLoading, isThinking, isSpeaking, voice, playAudio, user, firestore, sessionId]);
 
   useEffect(() => {
-    if (!isSpeaking && hasMicPermission) {
+    if (!isSpeaking && hasMicPermission && !isThinking && !isListening && !messagesLoading) {
       startListening();
     }
-  }, [isSpeaking, hasMicPermission, startListening]);
+  }, [isSpeaking, hasMicPermission, startListening, isThinking, isListening, messagesLoading]);
 
   const handleDisclaimerAgree = async () => {
     setShowDisclaimer(false);

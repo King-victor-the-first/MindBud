@@ -115,7 +115,7 @@ const therapyConversationFlow = ai.defineFlow(
 
     // Step 2: Try to generate the audio from the text response.
     try {
-        const audioResponse = await ai.generate({
+        const { media } = await ai.generate({
             model: googleAI.model('gemini-2.5-flash-preview-tts'),
             prompt: responseText,
             config: {
@@ -128,7 +128,6 @@ const therapyConversationFlow = ai.defineFlow(
             },
         });
 
-        const media = audioResponse.media;
         if (!media) {
             throw new Error('No media was returned from the TTS model.');
         }
