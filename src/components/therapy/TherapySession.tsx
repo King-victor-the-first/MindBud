@@ -48,7 +48,7 @@ export default function TherapySession() {
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
 
   const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content })) : [];
-  const transcript = messages ? messages.map(m => ({ speaker: m.role, text: m.content[0].text })) : [];
+  const transcript = messages ? messages.map(m => ({ speaker: m.role, text: m.content[0]?.text || '' })) : [];
 
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai");
 
@@ -106,7 +106,7 @@ export default function TherapySession() {
   }, []);
 
   const handleSpeech = useCallback(async (text: string) => {
-    if (!text || !user || !messagesQuery) {
+    if (!text || !user) {
       setIsThinking(false);
       return;
     }
@@ -136,7 +136,7 @@ export default function TherapySession() {
       await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
       setIsThinking(false);
     }
-  }, [user, sessionId, firestore, history, voice, playAudio, messagesQuery]);
+  }, [user, sessionId, firestore, history, voice, playAudio]);
 
   const startListening = useCallback(() => {
     if (!hasMicPermission || isListening || isThinking || isSpeaking) return;
