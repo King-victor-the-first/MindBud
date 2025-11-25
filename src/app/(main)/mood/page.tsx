@@ -7,6 +7,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ListChecks } from "lucide-react";
 
 export default function MoodPage() {
+
+  const moodHeadings = [
+    "How are you feeling?",
+    "How are you feeling right now?",
+    "What's your current mood?",
+    "Time for a mood check-in.",
+    "Let's log your mood."
+  ];
+
+  const randomHeading = moodHeadings[Math.floor(Math.random() * moodHeadings.length)];
+
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
       <div className="space-y-12">
@@ -31,7 +42,7 @@ export default function MoodPage() {
         </Card>
 
         <div>
-          <h1 className="text-3xl font-headline font-bold text-center mb-2">How are you feeling?</h1>
+          <h1 className="text-3xl font-headline font-bold text-center mb-2">{randomHeading}</h1>
           <p className="text-muted-foreground text-center mb-6">Log your mood to track your emotional wellness.</p>
           <MoodSelector />
         </div>
