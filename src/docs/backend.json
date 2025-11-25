@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "User": {
@@ -232,6 +233,18 @@
         }
       },
       "required": ["name", "dosage", "time"]
+    },
+    "DailyInsight": {
+        "title": "Daily Insight",
+        "description": "A personalized insight for the user.",
+        "type": "object",
+        "properties": {
+            "insight": {
+                "type": "string",
+                "description": "The generated insight text."
+            }
+        },
+        "required": ["insight"]
     }
   },
   "auth": {

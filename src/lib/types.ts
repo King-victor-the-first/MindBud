@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 
 export interface Activity {
@@ -96,4 +97,8 @@ export interface TherapyMessage {
     role: 'user' | 'model';
     content: { text: string }[];
     createdAt: any; // Firestore Timestamp
+}
+
+export interface DailyInsight {
+    insight: string;
 }

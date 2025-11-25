@@ -1,20 +1,25 @@
+
 'use client';
 
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "../shared/ThemeToggle";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore, useCollection } from "@/firebase";
 import { useDoc } from "@/firebase/firestore/use-doc";
-import { doc, getFirestore } from "firebase/firestore";
-import type { UserProfile } from "@/lib/types";
+import { collection, doc, getFirestore, limit, orderBy, query } from "firebase/firestore";
+import type { MoodEntry, UserProfile } from "@/lib/types";
 import { useMemoFirebase } from "@/firebase/provider";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Card, CardContent } from "../ui/card";
+import { generateDailyInsight } from "@/ai/flows/generate-daily-insight";
+import { useEffect, useState } from "react";
 
 export default function WelcomeHeader() {
   const { user } = useUser();
   const firestore = getFirestore();
+  const [insight, setInsight] = useState<string | null>(null);
+  const [isInsightLoading, setIsInsightLoading] = useState(true);
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -22,6 +27,17 @@ export default function WelcomeHeader() {
   }, [firestore, user]);
 
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  const recentMoodsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(
+        collection(firestore, `userProfiles/${user.uid}/moodEntries`), 
+        orderBy("createdAt", "desc"),
+        limit(5)
+    );
+  }, [firestore, user]);
+  
+  const { data: recentMoods, isLoading: moodsLoading } = useCollection<MoodEntry>(recentMoodsQuery);
 
   const getFirstName = () => {
     if (userProfile) {
@@ -42,6 +58,27 @@ export default function WelcomeHeader() {
     }
     return "U";
   }
+
+  useEffect(() => {
+    if (userProfile && recentMoods && !moodsLoading) {
+      setIsInsightLoading(true);
+      generateDailyInsight({
+        userName: userProfile.firstName,
+        recentMoods: recentMoods.map(m => ({ mood: m.mood, date: m.createdAt?.toDate().toISOString() || new Date().toISOString() }))
+      }).then(result => {
+        setInsight(result.insight);
+      }).catch(err => {
+        console.error("Error generating insight:", err);
+        setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
+      }).finally(() => {
+        setIsInsightLoading(false);
+      });
+    } else if (!moodsLoading) {
+        // Handle case with no user profile or moods
+        setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
+        setIsInsightLoading(false);
+    }
+  }, [userProfile, recentMoods, moodsLoading]);
 
 
   return (
@@ -75,11 +112,18 @@ export default function WelcomeHeader() {
               </div>
               <div className="flex-1">
                 <h3 className="font-headline font-semibold text-lg mb-2">Proactive Insight</h3>
-                <p className="text-sm text-foreground/80 mb-4">
-                  Remember that asking for help is not a sign of weakness; it’s a sign of strength.
-                </p>
+                {isInsightLoading ? (
+                    <div className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm text-foreground/80">Generating your daily insight...</span>
+                    </div>
+                ) : (
+                    <p className="text-sm text-foreground/80 mb-4">
+                        {insight}
+                    </p>
+                )}
                 <Link href="/therapy" passHref>
-                  <Button size="sm" className="elevation-2">Schedule a Mental Wellness Session Today!</Button>
+                  <Button size="sm" className="elevation-2 mt-4">Schedule a Mental Wellness Session Today!</Button>
                 </Link>
               </div>
             </div>
