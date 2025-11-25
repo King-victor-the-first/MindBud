@@ -181,7 +181,7 @@ export default function ChatInterface() {
   const loading = isSending || messagesLoading;
 
   return (
-    <div className="flex-1 flex flex-col chat-background-pattern">
+    <div className="flex-1 flex flex-col chat-background-pattern min-h-0">
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
         <div className="space-y-1">
           {messagesLoading && (
