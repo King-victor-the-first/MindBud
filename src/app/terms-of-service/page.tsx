@@ -134,7 +134,10 @@ export default function TermsOfServicePage() {
         
         <h2 className="font-headline">13. Contact Us</h2>
         <p>
-            If you have any questions about these Terms, please contact us at: [Your Contact Email/Form Link]
+            If you have any questions about these Terms, please contact us at:{" "}
+            <a href="mailto:victorehebhoria@gmail.com?subject=ENQUIRIES" className="text-primary hover:underline">
+              victorehebhoria@gmail.com
+            </a>
         </p>
       </div>
     </div>
