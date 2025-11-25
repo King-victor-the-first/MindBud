@@ -6,6 +6,7 @@ import { useUser } from '@/firebase/provider';
 import BottomNavBar from '@/components/shared/BottomNavBar';
 import Sidebar from '@/components/shared/Sidebar';
 import { Loader2 } from 'lucide-react';
+import { usePresence } from '@/hooks/use-presence';
 
 export default function MainLayout({
   children,
@@ -14,6 +15,9 @@ export default function MainLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+
+  // Initialize the presence hook. This will run for any authenticated user within this layout.
+  usePresence();
 
   useEffect(() => {
     if (!isUserLoading && !user) {

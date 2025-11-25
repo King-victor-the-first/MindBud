@@ -49,6 +49,10 @@ export interface UserProfile {
   lastName: string;
   email: string;
   isModerator?: boolean;
+  presence?: {
+    state: 'online' | 'offline';
+    lastChanged: any; // Firestore Timestamp
+  };
 }
 
 export interface MoodEntry {

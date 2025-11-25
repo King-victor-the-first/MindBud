@@ -23,6 +23,22 @@
         "isModerator": {
             "type": "boolean",
             "description": "Indicates if the user has moderator privileges."
+        },
+        "presence": {
+          "type": "object",
+          "description": "User's real-time presence information.",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": ["online", "offline"],
+              "description": "The user's current presence state."
+            },
+            "lastChanged": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The timestamp when the presence state last changed."
+            }
+          }
         }
       },
       "required": ["firstName", "lastName", "email"]

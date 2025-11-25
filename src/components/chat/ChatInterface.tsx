@@ -181,7 +181,7 @@ export default function ChatInterface() {
   const loading = isSending || messagesLoading;
 
   return (
-    <div className="flex-1 flex flex-col bg-muted/30">
+    <div className="flex-1 flex flex-col chat-background-pattern">
       <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
         <div className="space-y-1">
           {messagesLoading && (
@@ -213,11 +213,11 @@ export default function ChatInterface() {
                 </div>
                 <div
                     className={cn(
-                    "max-w-xs md:max-w-md p-3 rounded-xl relative",
+                    "max-w-xs md:max-w-md p-3 rounded-xl relative shadow-md",
                      isYou
                         ? "bg-primary text-primary-foreground"
                         : "bg-card text-card-foreground",
-                     msg.isDeleted && "italic text-muted-foreground bg-transparent p-1",
+                     msg.isDeleted && "italic text-muted-foreground bg-transparent p-1 shadow-none",
                      showAvatarAndName ? (isYou ? "rounded-br-none" : "rounded-bl-none") : "rounded-lg"
                     )}
                 >
