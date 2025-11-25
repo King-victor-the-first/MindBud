@@ -8,13 +8,15 @@ import { useToast } from "@/hooks/use-toast";
 import MoodTriggerModal from "./MoodTriggerModal";
 import CrisisModeDialog from "./CrisisModeDialog";
 import { useWellnessStore } from "@/lib/data";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Separator } from "../ui/separator";
 
 const moods = [
-  { label: "Awful", emoji: "😩", value: 1 },
-  { label: "Bad", emoji: "😕", value: 2 },
-  { label: "Okay", emoji: "😐", value: 3 },
-  { label: "Good", emoji: "😊", value: 4 },
-  { label: "Great", emoji: "😄", value: 5 },
+  { label: "Awful", emoji: "😣", value: 1, description: "Feeling very low, distressed, or overwhelmed" },
+  { label: "Bad", emoji: "😕", value: 2, description: "Feeling down, irritable, or unhappy" },
+  { label: "Okay", emoji: "😐", value: 3, description: "Neutral, neither good nor bad" },
+  { label: "Good", emoji: "🙂", value: 4, description: "Feeling positive, calm, or satisfied" },
+  { label: "Great", emoji: "😄", value: 5, description: "Feeling very happy, energized, or fulfilled" },
 ];
 
 export default function MoodSelector() {
@@ -132,6 +134,27 @@ export default function MoodSelector() {
         ))}
       </div>
       
+      <div className="mt-8">
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg">Mood Metrics</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">Use this guide to help identify your feelings.</p>
+                <ul className="space-y-3">
+                    {moods.map(mood => (
+                        <li key={mood.value} className="flex items-start gap-3 text-sm">
+                            <span className="text-xl w-6 text-center">{mood.emoji}</span>
+                            <span>
+                                <span className="font-semibold">{mood.label}</span> – {mood.description}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+      </div>
+
       <MoodTriggerModal 
         isOpen={isTriggerModalOpen}
         onClose={() => setIsTriggerModalOpen(false)}
