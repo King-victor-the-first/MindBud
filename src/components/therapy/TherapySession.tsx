@@ -167,7 +167,6 @@ export default function TherapySession() {
     };
     
     recognition.onend = () => {
-      // Only change state if we are currently in the listening state
       // This can be triggered by stop() or by natural end of speech
       if (sessionState === 'listening') {
         setSessionState('idle');

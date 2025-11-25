@@ -18,7 +18,7 @@ import type { MessageData } from 'genkit/ai';
 const TherapyConversationInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
-    parts: z.array(z.object({
+    content: z.array(z.object({
         text: z.string()
     }))
   })).describe('The conversation history.'),
