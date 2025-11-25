@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, PhoneOff, Loader2, BrainCircuit } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Loader2, BrainCircuit, MicIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
@@ -13,14 +13,18 @@ import type { MessageData } from 'genkit/ai';
 import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp } from "firebase/firestore";
 import type { TherapyMessage } from "@/lib/types";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
 // A state machine to manage the session's flow and prevent race conditions.
-type SessionState = 'idle' | 'listening' | 'thinking' | 'speaking';
+type SessionState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'requesting_permission';
 
 export default function TherapySession() {
   const [isMounted, setIsMounted] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [sessionState, setSessionState] = useState<SessionState>('idle');
+  const [hasMicPermission, setHasMicPermission] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const router = useRouter();
@@ -28,6 +32,7 @@ export default function TherapySession() {
   const { user } = useUser();
   const firestore = useFirestore();
   const [voice, setVoice] = useState('Algenib');
+  const { toast } = useToast();
 
   const sessionId = params.id as string;
 
@@ -126,8 +131,16 @@ export default function TherapySession() {
     }
   }, [user, sessionId, firestore, history, voice, playAudio, messagesQuery]);
 
+  const toggleListen = useCallback(() => {
+    if (sessionState === 'listening') {
+      recognitionRef.current?.stop();
+      setSessionState('idle');
+    } else if (sessionState === 'idle' && hasMicPermission) {
+      recognitionRef.current?.start();
+    }
+  }, [sessionState, hasMicPermission]);
 
-  // --- Initial Greeting ---
+  // --- Initial Greeting & Auto-Listen ---
   useEffect(() => {
     if (!showDisclaimer && !messagesLoading && messages?.length === 0 && sessionState === 'idle' && user && messagesQuery) {
       const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
@@ -158,8 +171,7 @@ export default function TherapySession() {
 
   // --- Speech Recognition Setup ---
   useEffect(() => {
-    if (typeof window === "undefined" || !("webkitSpeechRecognition" in window)) {
-      console.log("Speech recognition not supported");
+    if (typeof window === "undefined" || !("webkitSpeechRecognition" in window) || !hasMicPermission) {
       return;
     }
 
@@ -176,7 +188,6 @@ export default function TherapySession() {
     };
     
     recognition.onend = () => {
-      // This can be triggered by stop() or by natural end of speech
       if (sessionState === 'listening') {
         setSessionState('idle');
       }
@@ -185,6 +196,10 @@ export default function TherapySession() {
     recognition.onerror = (event) => {
       if (event.error !== 'aborted' && event.error !== 'no-speech') {
         console.error("Speech recognition error:", event.error);
+        if (event.error === 'not-allowed') {
+            setPermissionError("Microphone access was denied. Please enable it in your browser settings and refresh the page.");
+            setHasMicPermission(false);
+        }
       }
       if (sessionState === 'listening') {
         setSessionState('idle');
@@ -192,7 +207,7 @@ export default function TherapySession() {
     };
     
     recognition.onresult = (event) => {
-      setSessionState('thinking'); // Move to thinking state as soon as we have a result.
+      setSessionState('thinking'); 
       const finalTranscript = Array.from(event.results)
           .map(result => result[0])
           .map(result => result.transcript)
@@ -205,14 +220,13 @@ export default function TherapySession() {
       }
     };
 
-    // Cleanup function
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.onstart = null;
         recognitionRef.current.onend = null;
         recognitionRef.current.onerror = null;
         recognitionRef.current.onresult = null;
-        recognitionRef.current.abort(); // Stop any active recognition
+        recognitionRef.current.abort();
       }
       if(audioRef.current) {
         audioRef.current.pause();
@@ -221,25 +235,47 @@ export default function TherapySession() {
         audioRef.current.onerror = null;
       }
     };
-  }, [handleSpeech, sessionState]); // Rerun setup if handleSpeech changes
+  }, [handleSpeech, hasMicPermission]); // Re-run setup if permission changes
 
-  const toggleListen = () => {
-    if (sessionState === 'listening') {
-      recognitionRef.current?.stop();
-    } else if (sessionState === 'idle') {
-      recognitionRef.current?.start();
+
+  // Auto-start listening when AI is done speaking
+  useEffect(() => {
+    if (sessionState === 'idle' && !messagesLoading && messages && messages.length > 0 && hasMicPermission) {
+      toggleListen();
     }
-  };
+  }, [sessionState, messages, messagesLoading, hasMicPermission, toggleListen]);
 
-  const handleDisclaimerAgree = () => {
-      setShowDisclaimer(false);
+  const handleDisclaimerAgree = async () => {
+    setShowDisclaimer(false);
+    setSessionState('requesting_permission');
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setHasMicPermission(true);
+        setPermissionError(null);
+        stream.getTracks().forEach(track => track.stop()); // Stop the track immediately, we just needed permission
+        setSessionState('idle');
+        toast({
+            title: "Microphone Enabled",
+            description: "You can start speaking when the mic is active.",
+        });
+    } catch (error) {
+        console.error("Microphone permission error:", error);
+        setHasMicPermission(false);
+        setPermissionError("Microphone access was denied. Please enable it in your browser settings to use the voice feature.");
+        setSessionState('idle');
+    }
   }
 
   const getStatusContent = () => {
     if (messagesLoading) {
         return <div className="flex items-center gap-2"><Loader2 className="w-5 h-5 animate-spin" /> Loading session...</div>;
     }
+     if (permissionError) {
+        return <p className="text-red-400">{permissionError}</p>;
+    }
     switch (sessionState) {
+        case 'requesting_permission':
+            return <div className="flex items-center gap-2"><MicIcon className="w-5 h-5 animate-pulse" /> Requesting mic access...</div>;
         case 'listening':
             return <p>Listening...</p>;
         case 'thinking':
@@ -248,6 +284,9 @@ export default function TherapySession() {
             return <p>AI is speaking...</p>;
         case 'idle':
         default:
+             if (!hasMicPermission) {
+                return <p>Enable microphone to begin.</p>;
+            }
             return <p>Tap mic to speak</p>;
     }
   };
@@ -264,7 +303,7 @@ export default function TherapySession() {
     return <DisclaimerDialog onAgree={handleDisclaimerAgree} />;
   }
 
-  const isMicButtonDisabled = sessionState === 'speaking' || sessionState === 'thinking' || messagesLoading;
+  const isMicButtonDisabled = sessionState !== 'idle' && sessionState !== 'listening' || messagesLoading || !hasMicPermission;
   const lastMessage = transcript.length > 0 ? transcript[transcript.length-1] : null;
   
   return (
@@ -290,6 +329,15 @@ export default function TherapySession() {
            {getStatusContent()}
         </div>
 
+        {permissionError && (
+             <Alert variant="destructive" className="max-w-md mt-4 bg-destructive/20 border-destructive text-destructive-foreground">
+                <AlertTitle>Microphone Access Denied</AlertTitle>
+                <AlertDescription>
+                    {permissionError}
+                </AlertDescription>
+            </Alert>
+        )}
+
         <div className="absolute bottom-32 left-4 right-4 text-center max-h-48 overflow-y-auto">
             {lastMessage && (
               <p className={cn(
@@ -310,7 +358,7 @@ export default function TherapySession() {
             className={cn(
                 "rounded-full w-20 h-20 transition-all duration-300 shadow-lg",
                  sessionState === 'listening' 
-                    ? "bg-red-500 hover:bg-red-600"
+                    ? "bg-red-500 hover:bg-red-600 animate-pulse"
                     : "bg-green-500 hover:bg-green-600",
                  isMicButtonDisabled && "bg-gray-700 opacity-50 cursor-not-allowed"
             )}
@@ -325,3 +373,6 @@ export default function TherapySession() {
     </div>
   );
 }
+
+
+    
