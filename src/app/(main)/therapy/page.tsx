@@ -1,10 +1,21 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Zap } from 'lucide-react';
+import { Zap, Loader2 } from 'lucide-react';
 import TherapyScheduler from "@/components/therapy/TherapyScheduler";
 
 export default function TherapyPage() {
+  const [immediateSessionId, setImmediateSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // crypto.randomUUID() is only available in a secure context (browser).
+    // We generate it on the client-side after the component mounts.
+    setImmediateSessionId(crypto.randomUUID());
+  }, []);
+
   return (
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
       <div className="text-center mb-8">
@@ -13,12 +24,19 @@ export default function TherapyPage() {
       </div>
       
       <div className="mb-8 text-center">
-        <Link href={`/therapy-session/immediate-${crypto.randomUUID()}`} passHref>
-            <Button size="lg" className="w-full max-w-xs mx-auto">
-                <Zap className="mr-2 h-5 w-5" />
-                Start Immediate Session
+        {immediateSessionId ? (
+            <Link href={`/therapy-session/immediate-${immediateSessionId}`} passHref>
+                <Button size="lg" className="w-full max-w-xs mx-auto">
+                    <Zap className="mr-2 h-5 w-5" />
+                    Start Immediate Session
+                </Button>
+            </Link>
+        ) : (
+             <Button size="lg" className="w-full max-w-xs mx-auto" disabled>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Preparing Session...
             </Button>
-        </Link>
+        )}
         <p className="text-sm text-muted-foreground mt-2">Need to talk right away? Start a session now.</p>
       </div>
 
