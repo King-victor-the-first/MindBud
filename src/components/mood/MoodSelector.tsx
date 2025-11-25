@@ -12,11 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 
 const moods = [
-  { label: "Overwhelmed", emoji: "😣", value: 1, description: "Feeling very low, distressed, or overwhelmed" },
-  { label: "Down", emoji: "😕", value: 2, description: "Feeling down, irritable, or unhappy" },
-  { label: "Neutral", emoji: "😐", value: 3, description: "Feeling neutral, neither good nor bad" },
-  { label: "Content", emoji: "🙂", value: 4, description: "Feeling positive, calm, or satisfied" },
-  { label: "Joyful", emoji: "😄", value: 5, description: "Feeling very happy, energized, or fulfilled" },
+  { label: "Overwhelmed", emoji: "😩", value: 1, description: "Feeling very low, distressed, or overwhelmed" },
+  { label: "Angry", emoji: "😠", value: 2, description: "Feeling angry, irritated, or frustrated" },
+  { label: "Down", emoji: "😔", value: 3, description: "Feeling down, sad, or unhappy" },
+  { label: "Neutral", emoji: "😐", value: 4, description: "Feeling neutral, neither good nor bad" },
+  { label: "Content", emoji: "😊", value: 5, description: "Feeling positive, calm, or satisfied" },
+  { label: "Joyful", emoji: "😄", value: 6, description: "Feeling very happy, energized, or fulfilled" },
 ];
 
 export default function MoodSelector() {
@@ -118,7 +119,7 @@ export default function MoodSelector() {
             <span
               className={cn(
                 "text-4xl sm:text-5xl grayscale transition-all duration-300 transform group-hover:scale-110 group-hover:-translate-y-2 group-hover:rotate-6",
-                currentMood === mood.label && "grayscale-0 scale-125"
+                currentMood === mood.label && "grayscale-0 scale-125 -translate-y-1"
               )}
             >
               {mood.emoji}

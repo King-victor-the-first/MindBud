@@ -64,7 +64,7 @@ export default function MoodChart() {
     )
   }
 
-  const moodLabels = ["Overwhelmed", "Down", "Neutral", "Content", "Joyful"];
+  const moodLabels = ["Overwhelmed", "Angry", "Down", "Neutral", "Content", "Joyful"];
 
   return (
     <Card>
@@ -95,8 +95,8 @@ export default function MoodChart() {
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        domain={[1, 5]}
-                        ticks={[1, 2, 3, 4, 5]}
+                        domain={[1, 6]}
+                        ticks={[1, 2, 3, 4, 5, 6]}
                         tickFormatter={(value) => moodLabels[value - 1]}
                     />
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
