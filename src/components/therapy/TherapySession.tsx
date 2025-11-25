@@ -294,8 +294,8 @@ export default function TherapySession() {
             {lastMessage && (
               <p className={cn(
                   "text-xl transition-opacity duration-300",
-                  lastMessage.speaker === 'ai' && lastMessage.text.includes("988") ? "text-destructive font-semibold" :
-                  lastMessage.speaker === 'ai' ? "text-primary/90" : "text-white"
+                  lastMessage.speaker === 'model' && lastMessage.text.includes("988") ? "text-destructive font-semibold" :
+                  lastMessage.speaker === 'model' ? "text-primary/90" : "text-white"
               )}>
                 "{lastMessage.text}"
               </p>
