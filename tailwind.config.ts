@@ -112,7 +112,12 @@ export default {
           '50%': {
             boxShadow: '0 0 25px 5px hsl(var(--primary) / 0.6)',
           },
-        }
+        },
+        'jiggle': {
+          '0%, 100%': { transform: 'rotate(0deg) translateX(-50%)' },
+          '25%': { transform: 'rotate(-5deg) translateX(-50%)' },
+          '75%': { transform: 'rotate(5deg) translateX(-50%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -122,6 +127,7 @@ export default {
         'siri-3': 'siri-3 1s ease-in-out infinite 0.4s',
         'spin-continuous': 'spin-continuous .5s linear infinite',
         'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
+        'jiggle': 'jiggle 0.3s ease-in-out infinite',
       },
     },
   },

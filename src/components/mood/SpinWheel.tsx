@@ -90,7 +90,7 @@ export default function SpinWheel() {
   return (
     <div className="relative flex flex-col items-center justify-center p-4">
       <div className="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center mb-8">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10 drop-shadow-lg">
+        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 -translate-y-2 z-10 drop-shadow-lg", isSpinning && 'animate-jiggle')}>
           <div className="w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[20px] border-t-primary" />
         </div>
 
