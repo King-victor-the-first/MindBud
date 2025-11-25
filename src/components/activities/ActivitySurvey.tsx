@@ -151,7 +151,7 @@ export default function ActivitySurvey() {
       <CardHeader>
         <CardTitle>Your Survey</CardTitle>
         <CardDescription>
-          Answer some questions about your day to receive personalized insights from our AI. Your current mood is set to <span className="font-bold text-primary">{currentMood}</span>.
+          Answer some questions about your day to receive personalized insights from our AI. Your current feeling is set to <span className="font-bold text-primary">{currentMood}</span>.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-8">

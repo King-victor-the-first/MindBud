@@ -57,7 +57,7 @@ export interface UserProfile {
 
 export interface MoodEntry {
     id: string;
-    mood: "Awful" | "Bad" | "Okay" | "Good" | "Great";
+    mood: string;
     value: number;
     createdAt: any; // Firestore Timestamp
     trigger?: string;

@@ -14,11 +14,11 @@ export default function DashboardMetrics() {
     const [localSteps, setLocalSteps] = useState(steps);
 
     const moodMap: {[key: string]: {color: string, emoji: string}} = {
-        "Great": { color: "text-green-500", emoji: "😄" },
-        "Good": { color: "text-green-400", emoji: "😊" },
-        "Okay": { color: "text-yellow-500", emoji: "😐" },
-        "Bad": { color: "text-orange-500", emoji: "😕" },
-        "Awful": { color: "text-red-500", emoji: "😩" }
+        "Joyful": { color: "text-green-500", emoji: "😄" },
+        "Content": { color: "text-green-400", emoji: "😊" },
+        "Neutral": { color: "text-yellow-500", emoji: "😐" },
+        "Down": { color: "text-orange-500", emoji: "😕" },
+        "Overwhelmed": { color: "text-red-500", emoji: "😩" }
     }
     const { color: moodColor, emoji: moodEmoji } = moodMap[currentMood] || { color: "text-gray-500", emoji: "🤔"};
 

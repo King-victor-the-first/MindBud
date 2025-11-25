@@ -12,11 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 
 const moods = [
-  { label: "Awful", emoji: "😣", value: 1, description: "Feeling very low, distressed, or overwhelmed" },
-  { label: "Bad", emoji: "😕", value: 2, description: "Feeling down, irritable, or unhappy" },
-  { label: "Okay", emoji: "😐", value: 3, description: "Neutral, neither good nor bad" },
-  { label: "Good", emoji: "🙂", value: 4, description: "Feeling positive, calm, or satisfied" },
-  { label: "Great", emoji: "😄", value: 5, description: "Feeling very happy, energized, or fulfilled" },
+  { label: "Overwhelmed", emoji: "😣", value: 1, description: "Feeling very low, distressed, or overwhelmed" },
+  { label: "Down", emoji: "😕", value: 2, description: "Feeling down, irritable, or unhappy" },
+  { label: "Neutral", emoji: "😐", value: 3, description: "Feeling neutral, neither good nor bad" },
+  { label: "Content", emoji: "🙂", value: 4, description: "Feeling positive, calm, or satisfied" },
+  { label: "Joyful", emoji: "😄", value: 5, description: "Feeling very happy, energized, or fulfilled" },
 ];
 
 export default function MoodSelector() {
@@ -32,7 +32,7 @@ export default function MoodSelector() {
     // Set initial mood in store if needed, or sync with it.
     const initialMood = moods.find(m => m.label === currentMood);
     if (!initialMood) {
-        setCurrentMood("Okay");
+        setCurrentMood("Neutral");
     }
   }, [currentMood, setCurrentMood]);
 
@@ -81,7 +81,7 @@ export default function MoodSelector() {
 
         toast({
             title: "Mood Logged",
-            description: `You've logged your mood as "${currentMood}".`,
+            description: `You've logged your feeling as "${currentMood}".`,
         });
     } catch (error) {
         console.error("Error saving mood trigger:", error);

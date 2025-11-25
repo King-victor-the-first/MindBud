@@ -143,6 +143,6 @@ export const useWellnessStore = create<WellnessStore>((set) => ({
   setSteps: (steps) => set({ steps }),
   sleepHours: 0,
   setSleepHours: (hours) => set({ sleepHours: hours }),
-  currentMood: 'Okay',
+  currentMood: 'Neutral',
   setCurrentMood: (mood) => set({ currentMood: mood }),
 }));
