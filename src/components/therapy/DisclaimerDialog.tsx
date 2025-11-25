@@ -1,3 +1,5 @@
+
+import Link from "next/link";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -32,6 +34,12 @@ export default function DisclaimerDialog({ onAgree }: DisclaimerDialogProps) {
                             </p>
                             <p>
                                 If you are in a crisis, please contact a local emergency service immediately.
+                            </p>
+                            <p className="pt-2 text-xs">
+                                By clicking "I Understand and Agree," you confirm that you have read and agree to our{" "}
+                                <Link href="/terms-of-service" target="_blank" className="underline text-primary hover:text-primary/80">
+                                    Terms of Service
+                                </Link>.
                             </p>
                         </div>
                     </AlertDialogDescription>
