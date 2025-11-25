@@ -113,6 +113,7 @@ export default function MoodSelector() {
             key={mood.label}
             onClick={() => handleMoodSelect(mood)}
             className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-all"
+            aria-label={`Select mood: ${mood.label}`}
           >
             <span
               className={cn(
@@ -121,14 +122,6 @@ export default function MoodSelector() {
               )}
             >
               {mood.emoji}
-            </span>
-            <span
-              className={cn(
-                "text-xs sm:text-sm font-semibold",
-                currentMood === mood.label && "text-primary"
-              )}
-            >
-              {mood.label}
             </span>
           </button>
         ))}
