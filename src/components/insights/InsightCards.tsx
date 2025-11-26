@@ -1,13 +1,14 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, Timestamp, limit, orderBy } from 'firebase/firestore';
 import { subDays } from 'date-fns';
 import type { MoodEntry } from '@/lib/types';
 import { Loader2, TrendingUp, TrendingDown, Moon, Footprints, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { summarizeTriggerNotes } from '@/ai/flows/summarize-trigger-notes';
 
 // Mock data, as sleep and step collections don't exist per prompt
 const MOCK_SLEEP_HOURS = [7.5, 6, 8, 5, 7, 8.5, 6.5]; // last 7 days
@@ -16,6 +17,8 @@ const MOCK_STEP_COUNT = [8000, 5000, 9000, 12000, 4000, 6500, 10000, 3000, 7500,
 export default function InsightCards() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const [summarizedTrigger, setSummarizedTrigger] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
 
   const mood7DaysQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -111,41 +114,45 @@ export default function InsightCards() {
         return "None identified";
     }
 
-    let topTriggerName = sortedTriggers[0][0];
-
-    if (topTriggerName === "Other") {
-        const otherNotes = mood30Days
-            .filter(mood => mood.trigger === "Other" && mood.triggerNote)
-            .map(mood => mood.triggerNote);
-
-        if (otherNotes.length > 0) {
-            const wordCounts: { [key: string]: number } = {};
-            const stopWords = new Set(['a', 'about', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by', 'for', 'from', 'how', 'i', 'in', 'is', 'it', 'of', 'on', 'or', 'that', 'the', 'this', 'to', 'was', 'what', 'when', 'where', 'who', 'will', 'with', 'the', 'my', 'me', 'just', 'so', 'very']);
-            
-            otherNotes.forEach(note => {
-                note!.toLowerCase().split(/\s+/).forEach(word => {
-                    const cleanWord = word.replace(/[^a-z]/g, '');
-                    if (cleanWord.length > 3 && !stopWords.has(cleanWord)) {
-                        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
-                    }
-                });
-            });
-
-            const sortedWords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]);
-            if (sortedWords.length > 0) {
-                const mostCommonWord = sortedWords[0][0];
-                // Capitalize the first letter
-                topTriggerName = mostCommonWord.charAt(0).toUpperCase() + mostCommonWord.slice(1);
-            } else {
-                 topTriggerName = "Personal Matters"; // Fallback if notes have no parsable words
-            }
-        } else {
-            topTriggerName = "Personal Matters"; // Fallback if "Other" has no notes
-        }
-    }
-
-    return topTriggerName;
+    return sortedTriggers[0][0];
   }, [mood30Days]);
+
+
+  useEffect(() => {
+    if (topTrigger === "Other" && mood30Days) {
+      const otherNotes = mood30Days
+        .filter(mood => mood.trigger === "Other" && mood.triggerNote)
+        .map(mood => mood.triggerNote!);
+      
+      if (otherNotes.length > 2) {
+        setIsSummarizing(true);
+        summarizeTriggerNotes({ notes: otherNotes })
+          .then(result => {
+            setSummarizedTrigger(result.summary);
+          })
+          .catch(err => {
+            console.error("Error summarizing notes:", err);
+            setSummarizedTrigger("Personal Matters"); // Fallback
+          })
+          .finally(() => {
+            setIsSummarizing(false);
+          });
+      } else {
+        setSummarizedTrigger("Personal Matters"); // Fallback for too few notes
+      }
+    }
+  }, [topTrigger, mood30Days]);
+
+  const displayTrigger = useMemo(() => {
+    if (topTrigger !== "Other") {
+      return topTrigger;
+    }
+    if (isSummarizing) {
+      return "Analyzing...";
+    }
+    return summarizedTrigger || "Personal Matters";
+  }, [topTrigger, summarizedTrigger, isSummarizing]);
+
 
   const isLoading = loading7Days || loading30Days;
 
@@ -187,7 +194,7 @@ export default function InsightCards() {
             </CardContent>
         </Card>
       )}
-       {topTrigger && (
+       {displayTrigger && (
          <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -197,7 +204,7 @@ export default function InsightCards() {
                  <CardDescription>The most common factor affecting your mood in the last 30 days.</CardDescription>
             </CardHeader>
             <CardContent>
-                <p>Your most common stress trigger this month was <span className="font-bold text-primary">{topTrigger}</span>.</p>
+                <p>Your most common stress trigger this month was <span className="font-bold text-primary">{displayTrigger}</span>.</p>
             </CardContent>
         </Card>
       )}
