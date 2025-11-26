@@ -21,7 +21,7 @@ const navItems = [
 
 export default function BottomNavBar() {
   const pathname = usePathname();
-  const unreadCount = useUnreadChatMessages();
+  const { count: unreadCount, hasMention } = useUnreadChatMessages();
 
   return (
     <footer className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
@@ -38,8 +38,8 @@ export default function BottomNavBar() {
                       aria-label="Open Conversation Hub"
                     >
                        {unreadCount > 0 && (
-                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 justify-center rounded-full">
-                          {unreadCount > 99 ? '99+' : unreadCount}
+                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-6 min-w-[1.5rem] px-1.5 flex items-center justify-center rounded-full text-xs">
+                          {hasMention && '@'}{unreadCount > 99 ? '99+' : unreadCount}
                         </Badge>
                       )}
                       <SiriWave isActive={isActive} />
@@ -63,8 +63,8 @@ export default function BottomNavBar() {
                                Support Circle
                               </Button>
                               {unreadCount > 0 && (
-                                <Badge variant="destructive" className="absolute top-1/2 -translate-y-1/2 right-2 h-5 w-5 p-0 justify-center rounded-full">
-                                  {unreadCount > 99 ? '99+' : unreadCount}
+                                <Badge variant="destructive" className="absolute top-1/2 -translate-y-1/2 right-2 h-6 min-w-[1.5rem] px-1.5 flex items-center justify-center rounded-full text-xs">
+                                  {hasMention && '@'}{unreadCount > 99 ? '99+' : unreadCount}
                                 </Badge>
                               )}
                            </div>

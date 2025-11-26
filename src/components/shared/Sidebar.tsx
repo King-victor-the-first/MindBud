@@ -44,7 +44,7 @@ export default function Sidebar() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
-  const unreadCount = useUnreadChatMessages();
+  const { count: unreadCount, hasMention } = useUnreadChatMessages();
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -126,8 +126,8 @@ export default function Sidebar() {
                                             >
                                             {subItem.label}
                                             {isChat && unreadCount > 0 && (
-                                              <Badge variant="destructive" className="absolute right-2 h-5 w-5 p-0 justify-center rounded-full">
-                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                              <Badge variant="destructive" className="absolute top-1/2 -translate-y-1/2 right-2 h-6 min-w-[1.5rem] px-1.5 flex items-center justify-center rounded-full text-xs">
+                                                {hasMention && '@'}{unreadCount > 99 ? '99+' : unreadCount}
                                               </Badge>
                                             )}
                                         </Link>

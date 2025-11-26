@@ -30,6 +30,7 @@ export interface ChatMessage {
     messageOwner: string;
     messageSnippet: string;
   };
+  mentions?: string[];
 }
 
 export interface MoodBooster {

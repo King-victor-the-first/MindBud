@@ -7,14 +7,19 @@ import { collection, query, where, Timestamp } from 'firebase/firestore';
 import type { UserProfile, ChatMessage } from '@/lib/types';
 import { doc } from 'firebase/firestore';
 
+interface UnreadMessagesInfo {
+  count: number;
+  hasMention: boolean;
+}
+
 /**
- * A custom hook to count unread messages in the group chat.
- * @returns The number of unread messages.
+ * A custom hook to count unread messages and check for mentions in the group chat.
+ * @returns An object with the count of unread messages and a boolean indicating if there's a mention.
  */
-export function useUnreadChatMessages(): number {
+export function useUnreadChatMessages(): UnreadMessagesInfo {
   const { user } = useUser();
   const firestore = useFirestore();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadInfo, setUnreadInfo] = useState<UnreadMessagesInfo>({ count: 0, hasMention: false });
 
   // 1. Get the user's profile to find their last visit time
   const userProfileRef = useMemoFirebase(() => {
@@ -28,9 +33,6 @@ export function useUnreadChatMessages(): number {
   // 2. Query messages created after the last visit time
   const unreadMessagesQuery = useMemoFirebase(() => {
     if (!user || !lastVisitTimestamp) {
-        // If we don't have a last visit time, we can't query for unread messages.
-        // We could query all messages, but that might be too much data initially.
-        // A better approach is to wait until the timestamp is available.
         return null;
     }
     return query(
@@ -41,37 +43,32 @@ export function useUnreadChatMessages(): number {
 
   const { data: unreadMessages } = useCollection<ChatMessage>(unreadMessagesQuery);
   
-  // 3. Update the count whenever the query result changes
+  // 3. Update the count and mention status whenever the query result changes
   useEffect(() => {
-    // If the query is not active (e.g., no lastVisitTimestamp), the count is 0.
     if (!unreadMessagesQuery) {
-        // Special case: if there's no last visit timestamp, maybe all messages are unread?
-        // Let's check all messages to get an initial count.
-         const allMessagesQuery = query(collection(firestore, 'groupChatMessages'));
-         // This is a one-time fetch inside an effect, not a real-time subscription.
-         // A better implementation would use a subscription, but this avoids hook complexity for now.
-         // This part will only run once when the user has never visited the chat before.
-         const fetchAll = async () => {
-             const { getDocs } = await import('firebase/firestore');
-             const snapshot = await getDocs(allMessagesQuery);
-             setUnreadCount(snapshot.size);
-         }
-         if(!lastVisitTimestamp && user) {
-            fetchAll();
-         } else {
-            setUnreadCount(0);
-         }
+        const fetchInitialCount = async () => {
+             if (!user) {
+                setUnreadInfo({ count: 0, hasMention: false });
+                return;
+             }
+             // For a user who has never visited, all messages might be considered unread.
+             // To avoid overwhelming them, we can limit this initial check or simply start from zero.
+             // For this implementation, we will assume a fresh start means no "unread" messages until they visit.
+             setUnreadInfo({ count: 0, hasMention: false });
+        }
+        fetchInitialCount();
         return;
     }
 
-    if (unreadMessages) {
-      // We also filter out the user's own messages from the unread count
-      const count = unreadMessages.filter(msg => msg.userId !== user?.uid).length;
-      setUnreadCount(count);
+    if (unreadMessages && user) {
+      const filteredMessages = unreadMessages.filter(msg => msg.userId !== user.uid);
+      const count = filteredMessages.length;
+      const hasMention = filteredMessages.some(msg => msg.mentions?.includes(user.uid));
+      setUnreadInfo({ count, hasMention });
     } else {
-      setUnreadCount(0);
+      setUnreadInfo({ count: 0, hasMention: false });
     }
-  }, [unreadMessages, unreadMessagesQuery, user, lastVisitTimestamp, firestore]);
+  }, [unreadMessages, unreadMessagesQuery, user]);
 
-  return unreadCount;
+  return unreadInfo;
 }
