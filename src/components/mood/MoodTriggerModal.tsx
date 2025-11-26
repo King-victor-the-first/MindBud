@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const triggers = [
-    "Academics", "Social Life", "Finances", "Family", "Health", "No Clear Reason"
+    "Academics", "Social Life", "Work/Career", "Relationships", "Finances", "Health", "Self-Esteem", "The Future", "Environment", "No Clear Reason"
 ];
 
 type MoodTriggerModalProps = {
@@ -62,24 +63,26 @@ export default function MoodTriggerModal({ isOpen, onClose, onSave }: MoodTrigge
         </DialogHeader>
         
         <div className="py-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {triggers.map(trigger => (
-                    <Button 
-                        key={trigger}
+            <div className="max-h-60 overflow-y-auto pr-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {triggers.map(trigger => (
+                        <Button 
+                            key={trigger}
+                            variant="outline"
+                            className={cn("h-auto py-2", selectedTrigger === trigger && !showOtherInput && "bg-primary text-primary-foreground")}
+                            onClick={() => handleTriggerSelect(trigger)}
+                        >
+                            {trigger}
+                        </Button>
+                    ))}
+                     <Button 
                         variant="outline"
-                        className={cn(selectedTrigger === trigger && !showOtherInput && "bg-primary text-primary-foreground")}
-                        onClick={() => handleTriggerSelect(trigger)}
+                        className={cn("h-auto py-2", showOtherInput && "bg-primary text-primary-foreground")}
+                        onClick={() => handleTriggerSelect("Other")}
                     >
-                        {trigger}
+                        Other
                     </Button>
-                ))}
-                 <Button 
-                    variant="outline"
-                    className={cn(showOtherInput && "bg-primary text-primary-foreground")}
-                    onClick={() => handleTriggerSelect("Other")}
-                >
-                    Other
-                </Button>
+                </div>
             </div>
 
             {showOtherInput && (
