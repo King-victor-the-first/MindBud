@@ -4,13 +4,13 @@
 import { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import type { GratitudeEntry } from "@/lib/types";
-import { Loader2, PenSquare, Mic } from "lucide-react";
+import { Loader2, PenSquare, Mic, Pen, Check, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -34,14 +34,23 @@ export default function GratitudeJournal() {
   const [speechApiSupported, setSpeechApiSupported] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+
   const todayStr = format(new Date(), "yyyy-MM-dd");
 
   const entryRef = useMemoFirebase(() => {
-    if (!user) return null; // CRITICAL: Wait until user object is available
+    if (!user) return null;
     return doc(firestore, `userProfiles/${user.uid}/gratitudeJournal`, todayStr);
-  }, [user, firestore, todayStr]); // Dependency on `user` is key
+  }, [user, firestore, todayStr]);
 
   const { data: todayEntry, isLoading: isEntryLoading } = useDoc<GratitudeEntry>(entryRef);
+
+  useEffect(() => {
+    if (todayEntry) {
+        setEditText(todayEntry.entry);
+    }
+  }, [todayEntry]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -63,7 +72,12 @@ export default function GratitudeJournal() {
             interimTranscript += transcript;
           }
         }
-        setEntryText(prev => prev + finalTranscript);
+        
+        if (isEditing) {
+            setEditText(prev => prev + finalTranscript);
+        } else {
+            setEntryText(prev => prev + finalTranscript);
+        }
       };
 
       recognition.onerror = (event) => {
@@ -78,7 +92,7 @@ export default function GratitudeJournal() {
 
       recognitionRef.current = recognition;
     }
-  }, [toast]);
+  }, [toast, isEditing]);
 
 
   const toggleListening = () => {
@@ -86,7 +100,11 @@ export default function GratitudeJournal() {
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      setEntryText(prev => prev ? prev + ' ' : ''); // Add space before new dictation
+      if(isEditing) {
+        setEditText(prev => prev ? prev + ' ' : '');
+      } else {
+        setEntryText(prev => prev ? prev + ' ' : '');
+      }
       recognitionRef.current.start();
     }
     setIsListening(!isListening);
@@ -121,7 +139,28 @@ export default function GratitudeJournal() {
     }
   };
 
-  // Combine auth loading and doc loading states for a seamless loading experience.
+  const handleUpdateEntry = async () => {
+    if (!editText.trim() || !user || !entryRef) return;
+    setIsSaving(true);
+    try {
+        await updateDoc(entryRef, { entry: editText });
+        toast({
+            title: "Gratitude Updated",
+            description: "Your entry has been updated.",
+        });
+        setIsEditing(false);
+    } catch (error) {
+        console.error("Error updating gratitude entry:", error);
+        toast({
+            title: "Error",
+            description: "Could not update your entry. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSaving(false);
+    }
+  };
+
   if (isUserLoading || (user && isEntryLoading)) {
     return (
         <Card>
@@ -150,7 +189,49 @@ export default function GratitudeJournal() {
             </CardHeader>
             <CardContent>
                 {todayEntry ? (
-                    <p className="text-muted-foreground italic">"{todayEntry.entry}"</p>
+                    isEditing ? (
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <Textarea 
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    rows={4}
+                                    className={cn(speechApiSupported && "pr-12")}
+                                    autoFocus
+                                />
+                                {speechApiSupported && (
+                                    <Button 
+                                        type="button" 
+                                        size="icon" 
+                                        variant="ghost"
+                                        onClick={toggleListening}
+                                        className={cn(
+                                            "absolute right-2 top-2 h-8 w-8 text-muted-foreground hover:text-primary",
+                                            isListening && "text-red-500 animate-pulse"
+                                        )}
+                                        aria-label={isListening ? "Stop recording" : "Start recording"}
+                                    >
+                                       <Mic className="w-5 h-5" />
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
+                                    <X className="w-5 h-5" />
+                                </Button>
+                                <Button size="icon" onClick={handleUpdateEntry} disabled={isSaving}>
+                                    {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex justify-between items-start gap-4">
+                            <p className="text-muted-foreground italic flex-1">"{todayEntry.entry}"</p>
+                            <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)}>
+                                <Pen className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    )
                 ) : (
                     <>
                         <p className="text-muted-foreground mb-4">
