@@ -189,7 +189,7 @@ export default function ChatInterface() {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           )}
-          {messages && messages.map((msg, index) => {
+          {messages && messages.map((msg) => {
             const isYou = msg.userId === user?.uid;
             
             return (
