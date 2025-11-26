@@ -120,12 +120,12 @@ export default function InsightCards() {
 
         if (otherNotes.length > 0) {
             const wordCounts: { [key: string]: number } = {};
-            const stopWords = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'for', 'to', 'of', 'i', 'me', 'my', 'and', 'with', 'was']);
+            const stopWords = new Set(['a', 'about', 'an', 'and', 'are', 'as', 'at', 'be', 'but', 'by', 'for', 'from', 'how', 'i', 'in', 'is', 'it', 'of', 'on', 'or', 'that', 'the', 'this', 'to', 'was', 'what', 'when', 'where', 'who', 'will', 'with', 'the', 'my', 'me', 'just', 'so', 'very']);
             
             otherNotes.forEach(note => {
                 note!.toLowerCase().split(/\s+/).forEach(word => {
                     const cleanWord = word.replace(/[^a-z]/g, '');
-                    if (cleanWord.length > 2 && !stopWords.has(cleanWord)) {
+                    if (cleanWord.length > 3 && !stopWords.has(cleanWord)) {
                         wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
                     }
                 });
