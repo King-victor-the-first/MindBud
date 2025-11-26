@@ -67,7 +67,7 @@ export default function Sidebar() {
   const allNavItems = isModerator ? [...navItems, adminNavItem] : navItems;
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen p-4 bg-card border-r fixed top-0 left-0">
+    <aside className="hidden md:flex flex-col w-64 h-screen p-4 bg-card border-r fixed top-0 left-0 sidebar-background-pattern">
         <div className="flex items-center justify-between">
             <Logo />
         </div>
