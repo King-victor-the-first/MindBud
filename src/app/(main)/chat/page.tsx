@@ -1,3 +1,4 @@
+
 import ChatInterface from "@/components/chat/ChatInterface";
 import { ShieldCheck } from "lucide-react";
 
