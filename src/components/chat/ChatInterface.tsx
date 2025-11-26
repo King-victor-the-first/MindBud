@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import NextImage from "next/image";
+import { format } from "date-fns";
 import { moderateGroupChatMessage } from "@/ai/flows/moderate-group-chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -50,7 +51,6 @@ export default function ChatInterface() {
 
 
   useEffect(() => {
-    // Correctly get storage instance on the client
     setStorage(getStorageInstance());
   }, []);
 
@@ -183,7 +183,7 @@ export default function ChatInterface() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       <ScrollArea className="flex-grow p-4 chat-background-pattern" ref={scrollAreaRef}>
-        <div className="space-y-1">
+        <div className="flex flex-col gap-1 p-4">
           {messagesLoading && (
             <div className="flex justify-center items-center h-full">
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -191,82 +191,80 @@ export default function ChatInterface() {
           )}
           {messages && messages.map((msg, index) => {
             const isYou = msg.userId === user?.uid;
-            const prevMsg = messages[index - 1];
-            const showAvatarAndName = !prevMsg || prevMsg.userId !== msg.userId;
-
+            
             return (
                 <div
-                key={msg.id}
-                className={cn(
-                    "flex items-start gap-3 group",
-                    isYou ? "flex-row-reverse" : "",
-                    !showAvatarAndName && (isYou ? "ml-11" : "ml-11")
-                )}
+                    key={msg.id}
+                    className={cn(
+                        "flex items-end gap-2 w-full",
+                        isYou ? "justify-end" : "justify-start"
+                    )}
                 >
-                <div className="w-8 h-8 flex-shrink-0">
-                  {showAvatarAndName && (
-                    <Avatar className="w-8 h-8">
+                    {!isYou && <Avatar className="w-8 h-8 mb-4">
                         <AvatarImage src={msg.avatarUrl} />
                         <AvatarFallback>{msg.userName?.substring(0, 2) || 'A'}</AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-                <div
-                    className={cn(
-                    "max-w-xs md:max-w-md p-3 rounded-xl relative shadow-md",
-                     isYou
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-card-foreground",
-                     msg.isDeleted && "italic text-muted-foreground bg-transparent p-1 shadow-none",
-                     showAvatarAndName ? (isYou ? "rounded-br-none" : "rounded-bl-none") : "rounded-lg"
-                    )}
-                >
-                    {!isYou && !msg.isDeleted && showAvatarAndName && (
-                        <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold text-sm">{msg.userName}</p>
-                            {msg.isModerator && (
-                                <Badge variant="secondary" className="h-5 px-1.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
-                                    <ShieldCheck className="w-3 h-3 mr-1" />
-                                    Mod
-                                </Badge>
-                            )}
-                        </div>
-                    )}
+                    </Avatar>}
+                    <div className={cn(
+                            "group relative max-w-[75%] rounded-xl px-3 py-2 shadow-sm",
+                            isYou 
+                                ? "bg-primary text-primary-foreground rounded-br-none" 
+                                : "bg-card text-card-foreground rounded-bl-none",
+                            msg.isDeleted && "bg-transparent shadow-none italic text-muted-foreground text-sm"
+                        )}
+                    >
+                         {!isYou && !msg.isDeleted && (
+                            <div className="flex items-center gap-2 mb-1">
+                                <p className="font-semibold text-sm text-primary">{msg.userName}</p>
+                                {msg.isModerator && (
+                                    <Badge variant="secondary" className="h-5 px-1.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border-green-200 dark:border-green-700">
+                                        <ShieldCheck className="w-3 h-3 mr-1" />
+                                        Mod
+                                    </Badge>
+                                )}
+                            </div>
+                        )}
 
-                    {msg.replyTo && !msg.isDeleted && (
-                         <div className="p-2 mb-2 rounded-md bg-black/10 dark:bg-white/10 text-xs">
-                            <p className="font-semibold">{msg.replyTo.messageOwner}</p>
-                            <p className="truncate opacity-80">{msg.replyTo.messageSnippet}</p>
-                        </div>
-                    )}
-                    
-                    {msg.mediaUrl && !msg.isDeleted && msg.mediaType?.startsWith('image/') && (
-                        <NextImage src={msg.mediaUrl} alt="Shared media" width={200} height={200} className="rounded-md mb-2 object-cover" />
-                    )}
+                        {msg.replyTo && !msg.isDeleted && (
+                            <div className="p-2 mb-2 rounded-md bg-black/10 dark:bg-white/10 text-xs opacity-80">
+                                <p className="font-semibold">{msg.replyTo.messageOwner}</p>
+                                <p className="truncate">{msg.replyTo.messageSnippet}</p>
+                            </div>
+                        )}
+                        
+                        {msg.mediaUrl && !msg.isDeleted && msg.mediaType?.startsWith('image/') && (
+                            <NextImage src={msg.mediaUrl} alt="Shared media" width={200} height={200} className="rounded-md mb-2 object-cover" />
+                        )}
 
-                    <p className="text-sm">{msg.message}</p>
-                </div>
-                {!msg.isDeleted && (
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => setReplyTo(msg)}>
-                                <Reply className="w-4 h-4 mr-2" />
-                                Reply
-                            </DropdownMenuItem>
-                             {isYou && (
-                                <DropdownMenuItem onClick={() => setDeleteConfirmation(msg.id)} className="text-destructive">
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Delete
-                                </DropdownMenuItem>
-                             )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                        <p className={cn("text-sm pb-2", msg.isDeleted && "pb-0")}>{msg.message}</p>
+                        
+                        {!msg.isDeleted && msg.createdAt && (
+                            <span className="absolute bottom-1 right-2 text-xs opacity-60">
+                                {format(new Date(msg.createdAt.seconds * 1000), 'p')}
+                            </span>
+                        )}
+
+                        {!msg.isDeleted && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="absolute top-0 -right-10 w-8 h-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <MoreHorizontal className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuItem onClick={() => setReplyTo(msg)}>
+                                        <Reply className="w-4 h-4 mr-2" />
+                                        Reply
+                                    </DropdownMenuItem>
+                                    {isYou && (
+                                        <DropdownMenuItem onClick={() => setDeleteConfirmation(msg.id)} className="text-destructive">
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+                    </div>
                 </div>
             )
           })}
