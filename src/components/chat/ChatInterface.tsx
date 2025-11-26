@@ -240,7 +240,7 @@ export default function ChatInterface() {
                                 <NextImage src={msg.mediaUrl} alt="Shared media" width={200} height={200} className="rounded-md mb-2 object-cover" />
                             )}
 
-                            <p className={cn("text-sm pb-2", msg.isDeleted && "pb-0")}>{msg.message}</p>
+                            <p className={cn("text-sm pb-4 pr-10", msg.isDeleted && "pb-0 pr-0")}>{msg.message}</p>
                             
                             {!msg.isDeleted && msg.createdAt && (
                                 <span className="absolute bottom-1 right-2 text-xs opacity-60">
