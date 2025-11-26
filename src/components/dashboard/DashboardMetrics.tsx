@@ -2,25 +2,56 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Footprints, Smile, Bed, Edit, Save } from "lucide-react";
+import { Footprints, Smile, Bed, Edit, Save, Loader2 } from "lucide-react";
 import { useWellnessStore } from "@/lib/data";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, where, Timestamp } from "firebase/firestore";
+import type { MoodEntry } from "@/lib/types";
+import { startOfDay, endOfDay } from "date-fns";
+
+const moodMap: {[key: string]: {label: string, color: string, emoji: string}} = {
+    "1": { label: "Overwhelmed", color: "text-red-500", emoji: "😩" },
+    "2": { label: "Angry", color: "text-orange-600", emoji: "😠" },
+    "3": { label: "Down", color: "text-orange-500", emoji: "😕" },
+    "4": { label: "Neutral", color: "text-yellow-500", emoji: "😐" },
+    "5": { label: "Content", color: "text-green-400", emoji: "😊" },
+    "6": { label: "Joyful", color: "text-green-500", emoji: "😄" }
+};
 
 export default function DashboardMetrics() {
-    const { steps, setSteps, sleepHours, currentMood } = useWellnessStore();
+    const { user } = useUser();
+    const firestore = useFirestore();
+    const { steps, setSteps, sleepHours } = useWellnessStore();
     const [isEditingSteps, setIsEditingSteps] = useState(false);
     const [localSteps, setLocalSteps] = useState(steps);
+    const [averageMood, setAverageMood] = useState<{label: string, emoji: string, color: string} | null>(null);
 
-    const moodMap: {[key: string]: {color: string, emoji: string}} = {
-        "Joyful": { color: "text-green-500", emoji: "😄" },
-        "Content": { color: "text-green-400", emoji: "😊" },
-        "Neutral": { color: "text-yellow-500", emoji: "😐" },
-        "Down": { color: "text-orange-500", emoji: "😕" },
-        "Overwhelmed": { color: "text-red-500", emoji: "😩" }
-    }
-    const { color: moodColor, emoji: moodEmoji } = moodMap[currentMood] || { color: "text-gray-500", emoji: "🤔"};
+    const todayQuery = useMemoFirebase(() => {
+        if (!user) return null;
+        const todayStart = startOfDay(new Date());
+        const todayEnd = endOfDay(new Date());
+        return query(
+            collection(firestore, `userProfiles/${user.uid}/moodEntries`),
+            where("createdAt", ">=", Timestamp.fromDate(todayStart)),
+            where("createdAt", "<=", Timestamp.fromDate(todayEnd))
+        );
+    }, [user, firestore]);
+
+    const { data: todaysMoods, isLoading: moodsLoading } = useCollection<MoodEntry>(todayQuery);
+
+    useEffect(() => {
+        if (todaysMoods && todaysMoods.length > 0) {
+            const totalValue = todaysMoods.reduce((acc, mood) => acc + mood.value, 0);
+            const avgValue = Math.round(totalValue / todaysMoods.length);
+            const moodData = moodMap[String(avgValue)] || { label: "Neutral", emoji: "🤔", color: "text-gray-500"};
+            setAverageMood(moodData);
+        } else if (!moodsLoading) {
+            setAverageMood(null); // No moods logged today
+        }
+    }, [todaysMoods, moodsLoading]);
 
     const handleSaveSteps = () => {
         setSteps(localSteps);
@@ -43,12 +74,28 @@ export default function DashboardMetrics() {
         
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Mood for the day</CardTitle>
-              <Smile className={`h-4 w-4 text-muted-foreground ${moodColor}`} />
+              <CardTitle className="text-sm font-medium">Avg. Mood Today</CardTitle>
+              {moodsLoading ? 
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> :
+                <Smile className={`h-4 w-4 text-muted-foreground ${averageMood?.color || 'text-gray-500'}`} />
+              }
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{currentMood}</div>
-              <p className="text-xs text-muted-foreground">{moodEmoji}</p>
+              {moodsLoading ? (
+                 <div className="text-2xl font-bold h-[36px] flex items-center">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                 </div>
+              ) : averageMood ? (
+                <>
+                    <div className="text-2xl font-bold">{averageMood.label}</div>
+                    <p className="text-xs text-muted-foreground">{averageMood.emoji}</p>
+                </>
+              ) : (
+                <>
+                    <div className="text-2xl font-bold">Not Logged</div>
+                    <p className="text-xs text-muted-foreground">Log your mood to see stats.</p>
+                </>
+              )}
             </CardContent>
         </Card>
 
