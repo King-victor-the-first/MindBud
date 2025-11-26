@@ -97,17 +97,54 @@ export default function InsightCards() {
   
   const topTrigger = useMemo(() => {
     if (!mood30Days) return null;
+
     const triggerCounts: { [key: string]: number } = {};
-    
     mood30Days.forEach(mood => {
-      if (mood.trigger && mood.trigger !== "No Clear Reason") {
-        triggerCounts[mood.trigger] = (triggerCounts[mood.trigger] || 0) + 1;
-      }
+        if (mood.trigger && mood.trigger !== "No Clear Reason") {
+            triggerCounts[mood.trigger] = (triggerCounts[mood.trigger] || 0) + 1;
+        }
     });
 
     const sortedTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]);
     
-    return sortedTriggers.length > 0 ? sortedTriggers[0][0] : "None identified";
+    if (sortedTriggers.length === 0) {
+        return "None identified";
+    }
+
+    let topTriggerName = sortedTriggers[0][0];
+
+    if (topTriggerName === "Other") {
+        const otherNotes = mood30Days
+            .filter(mood => mood.trigger === "Other" && mood.triggerNote)
+            .map(mood => mood.triggerNote);
+
+        if (otherNotes.length > 0) {
+            const wordCounts: { [key: string]: number } = {};
+            const stopWords = new Set(['a', 'an', 'the', 'in', 'on', 'at', 'for', 'to', 'of', 'i', 'me', 'my', 'and', 'with', 'was']);
+            
+            otherNotes.forEach(note => {
+                note!.toLowerCase().split(/\s+/).forEach(word => {
+                    const cleanWord = word.replace(/[^a-z]/g, '');
+                    if (cleanWord.length > 2 && !stopWords.has(cleanWord)) {
+                        wordCounts[cleanWord] = (wordCounts[cleanWord] || 0) + 1;
+                    }
+                });
+            });
+
+            const sortedWords = Object.entries(wordCounts).sort((a, b) => b[1] - a[1]);
+            if (sortedWords.length > 0) {
+                const mostCommonWord = sortedWords[0][0];
+                // Capitalize the first letter
+                topTriggerName = mostCommonWord.charAt(0).toUpperCase() + mostCommonWord.slice(1);
+            } else {
+                 topTriggerName = "Personal Matters"; // Fallback if notes have no parsable words
+            }
+        } else {
+            topTriggerName = "Personal Matters"; // Fallback if "Other" has no notes
+        }
+    }
+
+    return topTriggerName;
   }, [mood30Days]);
 
   const isLoading = loading7Days || loading30Days;
