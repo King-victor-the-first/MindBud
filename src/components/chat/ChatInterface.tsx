@@ -288,7 +288,7 @@ export default function ChatInterface() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="p-4 bg-card border-t flex-shrink-0">
+      <div className="sticky bottom-0 z-10 p-4 bg-card border-t flex-shrink-0">
         {replyTo && (
             <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm">
                 <div>
