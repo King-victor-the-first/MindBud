@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -32,6 +33,9 @@ const navItems = [
 
 const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
 
+// Designated super admin UID for failsafe access
+const SUPER_ADMIN_UID = 'BzsBHchaPEYuHwuhqlMiwRaMbBJ2';
+
 export default function Sidebar() {
   const pathname = usePathname();
   const auth = useAuth();
@@ -46,6 +50,7 @@ export default function Sidebar() {
   
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
   const isModerator = userProfile?.isModerator === true;
+  const isSuperAdmin = user?.uid === SUPER_ADMIN_UID;
 
   const handleLogout = async () => {
     await auth.signOut();
@@ -62,6 +67,12 @@ export default function Sidebar() {
     if (userProfile) return `${userProfile.firstName?.[0] || ''}${userProfile.lastName?.[0] || ''}`;
     if (user && user.displayName) return user.displayName.split(' ').map(n => n[0]).join('');
     return "U";
+  }
+
+  const getRoleText = () => {
+    if (isSuperAdmin) return "Super Admin";
+    if (isModerator) return "Moderator";
+    return "Student";
   }
 
   const allNavItems = isModerator ? [...navItems, adminNavItem] : navItems;
@@ -149,7 +160,7 @@ export default function Sidebar() {
                   </Avatar>
                   <div>
                       <p className="font-semibold text-sm">{getFirstName()}</p>
-                      <p className="text-xs text-muted-foreground">{isModerator ? 'Moderator' : 'Student'}</p>
+                      <p className="text-xs text-muted-foreground">{getRoleText()}</p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
