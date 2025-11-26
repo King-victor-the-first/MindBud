@@ -34,7 +34,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { FirebaseStorage } from "firebase/storage";
 
 export default function ChatInterface() {
   const [input, setInput] = useState("");
@@ -49,12 +48,6 @@ export default function ChatInterface() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
-  const [storage, setStorage] = useState<FirebaseStorage | null>(null);
-
-
-  useEffect(() => {
-    setStorage(getStorageInstance());
-  }, []);
 
 
   const userProfileRef = useMemoFirebase(() => {
@@ -94,9 +87,10 @@ export default function ChatInterface() {
   };
 
   const handleSend = async () => {
-    if ((!input.trim() && !mediaFile) || !user) return;
+    if ((!input.trim() && !mediaFile) || !user || !userProfile) return;
 
     setIsSending(true);
+
     try {
       const moderationResult = await moderateGroupChatMessage({
         message: input,
@@ -115,8 +109,8 @@ export default function ChatInterface() {
         return;
       }
       
-      const displayName = userProfile?.firstName ? `${userProfile.firstName} ${userProfile.lastName?.[0] || ''}.` : user.displayName || 'Anonymous';
-      const isModerator = userProfile?.isModerator === true;
+      const displayName = userProfile.firstName ? `${userProfile.firstName} ${userProfile.lastName?.[0] || ''}.` : user.displayName || 'Anonymous';
+      const isModerator = userProfile.isModerator === true;
 
       const newMessage: Omit<ChatMessage, 'id' | 'mediaUrl' | 'mediaType'> & { mediaUrl?: string, mediaType?: string } = {
         userId: user.uid,
@@ -129,12 +123,21 @@ export default function ChatInterface() {
       };
       
       if (mediaFile) {
-        if (!storage) {
-            throw new Error("Storage service is not available.");
+        try {
+          const storage = getStorageInstance();
+          const { downloadURL } = await uploadFile(storage, mediaFile, `chat/${user.uid}/${Date.now()}_${mediaFile.name}`);
+          newMessage.mediaUrl = downloadURL;
+          newMessage.mediaType = mediaFile.type;
+        } catch (uploadError) {
+           console.error("Error uploading file:", uploadError);
+           toast({
+              title: "Upload Failed",
+              description: "Could not upload the image. Please try again.",
+              variant: "destructive",
+           });
+           setIsSending(false);
+           return;
         }
-        const { downloadURL } = await uploadFile(storage, mediaFile, `chat/${user.uid}/${Date.now()}_${mediaFile.name}`);
-        newMessage.mediaUrl = downloadURL;
-        newMessage.mediaType = mediaFile.type;
       }
 
       if (replyTo) {
@@ -144,11 +147,9 @@ export default function ChatInterface() {
             messageSnippet: replyTo.message || (replyTo.mediaUrl ? "Image" : "")
         }
       }
-
+      
       const messagesCollectionRef = collection(firestore, "groupChatMessages");
-      await addDocumentNonBlocking(messagesCollectionRef, newMessage).catch(err => {
-        throw err;
-      });
+      await addDocumentNonBlocking(messagesCollectionRef, newMessage);
 
       setInput("");
       setReplyTo(null);
@@ -353,5 +354,3 @@ export default function ChatInterface() {
     </div>
   );
 }
-
-    
