@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -7,6 +8,8 @@ import { cn } from '@/lib/utils';
 import SiriWave from './SiriWave';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '../ui/button';
+import { useUnreadChatMessages } from '@/hooks/use-unread-chat-messages';
+import { Badge } from '../ui/badge';
 
 const navItems = [
   { href: '/dashboard', label: 'Home', icon: Home },
@@ -18,6 +21,7 @@ const navItems = [
 
 export default function BottomNavBar() {
   const pathname = usePathname();
+  const unreadCount = useUnreadChatMessages();
 
   return (
     <footer className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
@@ -30,9 +34,14 @@ export default function BottomNavBar() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <button
-                      className="flex items-center justify-center w-16 h-16 -translate-y-4 bg-card rounded-full shadow-lg border-2 border-primary mx-auto"
+                      className="relative flex items-center justify-center w-16 h-16 -translate-y-4 bg-card rounded-full shadow-lg border-2 border-primary mx-auto"
                       aria-label="Open Conversation Hub"
                     >
+                       {unreadCount > 0 && (
+                        <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 justify-center rounded-full">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Badge>
+                      )}
                       <SiriWave isActive={isActive} />
                     </button>
                   </PopoverTrigger>
@@ -49,7 +58,16 @@ export default function BottomNavBar() {
                            <Button variant={pathname.startsWith('/therapy') ? "default" : "outline"} className="w-full justify-start">AI Therapy Session</Button>
                         </Link>
                         <Link href="/chat" passHref>
-                           <Button variant={pathname.startsWith('/chat') ? "default" : "outline"} className="w-full justify-start">Support Circle</Button>
+                          <div className="relative w-full">
+                             <Button variant={pathname.startsWith('/chat') ? "default" : "outline"} className="w-full justify-start">
+                               Support Circle
+                              </Button>
+                              {unreadCount > 0 && (
+                                <Badge variant="destructive" className="absolute top-1/2 -translate-y-1/2 right-2 h-5 w-5 p-0 justify-center rounded-full">
+                                  {unreadCount > 99 ? '99+' : unreadCount}
+                                </Badge>
+                              )}
+                           </div>
                         </Link>
                       </div>
                     </div>

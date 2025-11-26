@@ -53,6 +53,7 @@ export interface UserProfile {
     state: 'online' | 'offline';
     lastChanged: any; // Firestore Timestamp
   };
+  lastSupportChatVisit?: any; // Firestore Timestamp
 }
 
 export interface MoodEntry {

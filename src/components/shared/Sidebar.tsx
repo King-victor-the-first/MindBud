@@ -14,6 +14,8 @@ import { type UserProfile } from '@/lib/types';
 import { Button } from '../ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { ChevronRight } from 'lucide-react';
+import { useUnreadChatMessages } from '@/hooks/use-unread-chat-messages';
+import { Badge } from '../ui/badge';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -42,6 +44,7 @@ export default function Sidebar() {
   const { user } = useUser();
   const firestore = useFirestore();
   const router = useRouter();
+  const unreadCount = useUnreadChatMessages();
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -109,18 +112,24 @@ export default function Sidebar() {
                             <CollapsibleContent className='pl-8 pt-1 space-y-1'>
                                 {item.subItems.map(subItem => {
                                     const isSubItemActive = pathname.startsWith(subItem.href);
+                                    const isChat = subItem.href === '/chat';
                                     return (
                                         <Link
                                             key={subItem.href}
                                             href={subItem.href}
                                             className={cn(
-                                                'flex items-center gap-3 px-4 py-1.5 rounded-md transition-colors duration-200 text-sm',
+                                                'relative flex items-center gap-3 px-4 py-1.5 rounded-md transition-colors duration-200 text-sm',
                                                 isSubItemActive
                                                 ? 'text-primary font-semibold'
                                                 : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                             )}
                                             >
                                             {subItem.label}
+                                            {isChat && unreadCount > 0 && (
+                                              <Badge variant="destructive" className="absolute right-2 h-5 w-5 p-0 justify-center rounded-full">
+                                                {unreadCount > 99 ? '99+' : unreadCount}
+                                              </Badge>
+                                            )}
                                         </Link>
                                     )
                                 })}
