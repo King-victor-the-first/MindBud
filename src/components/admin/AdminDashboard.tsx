@@ -39,16 +39,15 @@ export default function AdminDashboard() {
   const { user: authUser } = useUser();
   const { toast } = useToast();
 
-  const isSuperAdmin = authUser?.uid === SUPER_ADMIN_UID;
-
   const usersQuery = useMemoFirebase(() => {
-    // IMPORTANT: Only query all users if the logged-in user is the super admin.
-    // This prevents permission errors for regular moderators.
-    if (!firestore || !isSuperAdmin) return null;
+    if (!firestore) return null;
     return query(collection(firestore, "userProfiles"));
-  }, [firestore, isSuperAdmin]);
+  }, [firestore]);
 
   const { data: users, isLoading } = useCollection<UserProfile>(usersQuery);
+  
+  const currentUserProfile = users?.find(u => u.id === authUser?.uid);
+  const isModerator = currentUserProfile?.isModerator === true;
 
   const toggleModerator = (user: UserProfile) => {
     // Super admin cannot have their status changed by this UI.
@@ -87,27 +86,27 @@ export default function AdminDashboard() {
     });
   };
 
-  // Regular moderators or non-admins see a restricted view.
-  if (!isSuperAdmin) {
-    return (
-       <Card>
-        <CardContent className="pt-6 text-center">
-            <ShieldOff className="w-12 h-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-bold">Access Denied</h2>
-            <p className="text-muted-foreground mt-2">
-              You do not have permission to view the full user list.
-            </p>
-        </CardContent>
-       </Card>
-    )
-  }
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
+  }
+
+  // Regular students see a restricted view.
+  if (!isModerator) {
+    return (
+       <Card>
+        <CardContent className="pt-6 text-center">
+            <ShieldOff className="w-12 h-12 text-destructive mx-auto mb-4" />
+            <h2 className="text-xl font-bold">Access Denied</h2>
+            <p className="text-muted-foreground mt-2">
+              You do not have permission to view the user list.
+            </p>
+        </CardContent>
+       </Card>
+    )
   }
 
   return (

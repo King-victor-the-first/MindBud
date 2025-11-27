@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    match /userProfiles/{userId} {
+      // Allow any authenticated user to read all user profiles.
+      allow read: if request.auth != null;
+
+      // Allow a user to write ONLY to their own profile and all subcollections within it.
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // This rule covers all subcollections like medications, safetyPlan, etc.
+      match /{document=**} {
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Allow any authenticated user to read and write to the group chat.
+    match /groupChatMessages/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
