@@ -73,13 +73,13 @@
     }
     .chat-background-pattern {
       background-color: hsl(var(--muted));
-      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Cpath d='M12 12 L18 18 M25 5 L35 15 M5 25 L15 35 M80 80 L88 88 M95 75 L85 85 M75 95 L85 85 M20 80 L10 90 M80 20 L90 10 M40 60 Q50 40 60 60 T80 60 M60 40 Q40 50 60 60 T60 80 M50 50 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0 M90 50 L95 55 L90 60' stroke='%239C92AC' stroke-width='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
       background-attachment: fixed;
     }
 
     .dark .chat-background-pattern {
         background-color: hsl(var(--background));
-        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234A5568' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234A5568' fill-opacity='0.1'%3E%3Cpath d='M12 12 L18 18 M25 5 L35 15 M5 25 L15 35 M80 80 L88 88 M95 75 L85 85 M75 95 L85 85 M20 80 L10 90 M80 20 L90 10 M40 60 Q50 40 60 60 T80 60 M60 40 Q40 50 60 60 T60 80 M50 50 m -10 0 a 10 10 0 1 0 20 0 a 10 10 0 1 0 -20 0 M90 50 L95 55 L90 60' stroke='%234A5568' stroke-width='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
         background-attachment: fixed;
     }
     
