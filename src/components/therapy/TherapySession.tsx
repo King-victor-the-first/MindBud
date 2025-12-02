@@ -47,8 +47,12 @@ export default function TherapySession() {
 
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
 
-  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content })) : [];
-  const transcript = messages ? messages.map(m => ({ speaker: m.role, text: m.content || '' })) : [];
+  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content as any })) : [];
+  const transcript = messages ? messages.map(m => {
+    const textContent = Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : (typeof m.content === 'string' ? m.content : '');
+    return { speaker: m.role, text: textContent };
+  }) : [];
+
 
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai");
 
@@ -114,14 +118,14 @@ export default function TherapySession() {
     setIsThinking(true);
     const userMessage: MessageData = { role: 'user', content: text };
     const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
-    await addDocumentNonBlocking(messagesCollectionRef, { ...userMessage, createdAt: serverTimestamp() });
+    await addDocumentNonBlocking(messagesCollectionRef, { role: 'user', content: [{text: text}], createdAt: serverTimestamp() });
     
     try {
       const currentHistory = [...history, userMessage];
       const result = await therapyConversation({ history: currentHistory, message: text, voiceName: voice });
       
       const aiMessage: MessageData = { role: 'model', content: result.response };
-      await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
+      await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
       
       setIsThinking(false);
       const isCrisisResponse = result.response.includes("988");
@@ -133,7 +137,7 @@ export default function TherapySession() {
       console.error("Error with therapy conversation flow:", error);
       const errorMessage = "I'm having a little trouble connecting right now. Please give me a moment.";
       const aiMessage: MessageData = { role: 'model', content: errorMessage };
-      await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
+      await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: errorMessage}], createdAt: serverTimestamp() });
       setIsThinking(false);
     }
   }, [user, sessionId, firestore, history, voice, playAudio]);
@@ -224,7 +228,7 @@ export default function TherapySession() {
           try {
             const result = await therapyConversation({ history: [], message: "", voiceName: voice });
             const aiMessage: MessageData = { role: 'model', content: result.response };
-            await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
+            await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
             
             setIsThinking(false);
             if (result.audio) {
@@ -234,7 +238,7 @@ export default function TherapySession() {
             console.error("Failed to generate initial greeting", e);
             const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
             const aiMessage: MessageData = { role: 'model', content: initialGreeting };
-            await addDocumentNonBlocking(messagesCollectionRef, { ...aiMessage, createdAt: serverTimestamp() });
+            await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: initialGreeting}], createdAt: serverTimestamp() });
             setIsThinking(false);
           }
       })();
