@@ -18,9 +18,7 @@ import type { MessageData } from 'genkit/ai';
 const TherapyConversationInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
-    content: z.array(z.object({
-        text: z.string()
-    }))
+    content: z.string()
   })).describe('The conversation history.'),
   message: z.string().describe("The user's latest message."),
   voiceName: z.string().optional().describe("The voice to use for the TTS response."),
