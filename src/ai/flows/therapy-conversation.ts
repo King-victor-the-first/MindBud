@@ -12,6 +12,9 @@ import { z } from 'genkit';
 import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
 
+// Increase the timeout for this server action to 2 minutes
+export const maxDuration = 120;
+
 // --- SCHEMAS ---
 
 const TherapyConversationInputSchema = z.object({
@@ -110,6 +113,12 @@ const therapyConversationFlow = ai.defineFlow(
     outputSchema: TherapyConversationOutputSchema,
   },
   async (input) => {
+    // 1. Verify API Key
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("❌ CRITICAL: Missing GEMINI_API_KEY environment variable.");
+      throw new Error("Server configuration error: The API key is missing.");
+    }
+
     console.log("🚀 START: Therapy Flow Triggered");
     console.log(`📝 User Message: "${input.message}"`);
     console.log(`📂 History Length: ${input.history?.length || 0}`);
@@ -220,9 +229,12 @@ const therapyConversationFlow = ai.defineFlow(
                 audio: undefined, 
             };
         }
-    } catch (e) {
+    } catch (e: any) {
+        // 2. Add Robust Error Logging and Response
         console.error("❌ CRITICAL FLOW ERROR:", e);
-        throw e; 
+        // Instead of re-throwing the raw error (which can crash the server process),
+        // throw a new, clean error that the client can handle.
+        throw new Error(`An error occurred in the AI session: ${e.message || 'Unknown error'}`);
     }
   }
 );
