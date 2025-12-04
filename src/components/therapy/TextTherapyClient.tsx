@@ -45,10 +45,9 @@ export default function TextTherapyClient() {
 
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
   
-  // This history transformation is for the `therapyConversation` flow which has a specific format.
   const history: MessageData[] = messages ? messages.map(m => ({ 
       role: m.role, 
-      content: Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : (typeof m.content === 'string' ? m.content : '') as any 
+      content: m.content
   })) : [];
   
   const scrollToBottom = () => {
@@ -95,12 +94,13 @@ export default function TextTherapyClient() {
 
   // Initial greeting logic
   useEffect(() => {
+    const aiVoice = localStorage.getItem('aiVoice') || 'Algenib';
     if (!showDisclaimer && !messagesLoading && messages?.length === 0 && user) {
        (async () => {
           setIsSending(true);
           const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
           try {
-            const result = await therapyConversation({ history: [], message: "", voiceName: 'Algenib' });
+            const result = await therapyConversation({ history: [], message: "", voiceName: aiVoice });
             await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
           } catch(e) {
             console.error("Failed to generate initial greeting", e);

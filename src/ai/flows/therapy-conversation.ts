@@ -13,7 +13,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
-import { MessageData } from 'genkit/ai';
+import type { MessageData } from 'genkit/ai';
 
 // Increase the timeout for this server action to 2 minutes
 export const maxDuration = 120;
@@ -100,12 +100,13 @@ const therapyConversationFlow = ai.defineFlow(
     // 1. Normalize history to ensure content is always a string
     const cleanHistory: MessageData[] = input.history
       .map(msg => {
+          // Extract text content, whether it's a string or inside an array of parts
           const textContent = Array.isArray(msg.content) 
               ? msg.content[0]?.text || ''
               : typeof msg.content === 'string' ? msg.content : '';
           return { role: msg.role, content: [{text: textContent}] };
       })
-      .filter(msg => msg.content[0].text.trim() !== ''); // Filter out empty messages
+      .filter(msg => msg.content[0].text.trim() !== ''); // Filter out any messages that ended up empty
 
 
     // Handle initial greeting if history is empty
