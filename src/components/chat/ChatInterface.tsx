@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft } from "lucide-react";
+import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft, Mic } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -35,8 +35,15 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-export default function ChatInterface() {
+
+type ChatInterfaceProps = {
+    onStartVoiceSession: () => void;
+};
+
+
+export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
@@ -370,6 +377,19 @@ export default function ChatInterface() {
             onKeyPress={(e) => e.key === "Enter" && handleSend()}
             disabled={loading}
           />
+          <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={onStartVoiceSession} disabled={loading} aria-label="Start Live Voice Session">
+                        <Mic className="w-5 h-5 text-primary"/>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Start Live Voice Session</p>
+                </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
           <Button onClick={handleSend} disabled={loading || (!input.trim() && !mediaFile)} size="icon">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
