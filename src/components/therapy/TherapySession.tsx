@@ -10,15 +10,14 @@ import { cn } from "@/lib/utils";
 import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
 import type { MessageData } from 'genkit/ai';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from "@/firebase";
-import { collection, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useMemoFirebase, addDoc, collection, serverTimestamp } from "@/firebase";
 import type { TherapyMessage } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
 export default function TherapySession() {
   const [isMounted, setIsMounted] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [showDisclaimer, setShowDisclaimer] = useState(false); // Default to false, let logic handle it
   const [hasMicPermission, setHasMicPermission] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   
@@ -61,6 +60,14 @@ export default function TherapySession() {
     audioRef.current = new Audio();
     const savedVoice = localStorage.getItem('aiVoice') || 'Algenib';
     setVoice(savedVoice);
+    
+    // Check if disclaimer was already agreed for this session
+    const disclaimerAgreed = sessionStorage.getItem(`disclaimerAgreed_${sessionId}`);
+    if (!disclaimerAgreed) {
+        setShowDisclaimer(true);
+    } else {
+        handleDisclaimerAgree();
+    }
 
     return () => {
       // Cleanup on unmount
@@ -72,7 +79,7 @@ export default function TherapySession() {
         audioRef.current.src = "";
       }
     };
-  }, []);
+  }, [sessionId]);
 
   const playAudio = useCallback((audioDataUri: string) => {
     return new Promise<void>((resolve, reject) => {
@@ -116,16 +123,13 @@ export default function TherapySession() {
     }
 
     setIsThinking(true);
-    const userMessage: MessageData = { role: 'user', content: text };
     const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
-    await addDocumentNonBlocking(messagesCollectionRef, { role: 'user', content: [{text: text}], createdAt: serverTimestamp() });
+    await addDoc(messagesCollectionRef, { role: 'user', content: [{text: text}], createdAt: serverTimestamp() });
     
     try {
-      const currentHistory = [...history, userMessage];
-      const result = await therapyConversation({ history: currentHistory, message: text, voiceName: voice });
+      const result = await therapyConversation({ history: history, message: text, voiceName: voice });
       
-      const aiMessage: MessageData = { role: 'model', content: result.response };
-      await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
+      await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
       
       setIsThinking(false);
       const isCrisisResponse = result.response.includes("988");
@@ -136,8 +140,7 @@ export default function TherapySession() {
     } catch (error) {
       console.error("Error with therapy conversation flow:", error);
       const errorMessage = "I'm having a little trouble connecting right now. Please give me a moment.";
-      const aiMessage: MessageData = { role: 'model', content: errorMessage };
-      await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: errorMessage}], createdAt: serverTimestamp() });
+      await addDoc(messagesCollectionRef, { role: 'model', content: [{text: errorMessage}], createdAt: serverTimestamp() });
       setIsThinking(false);
     }
   }, [user, sessionId, firestore, history, voice, playAudio]);
@@ -227,8 +230,7 @@ export default function TherapySession() {
           const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
           try {
             const result = await therapyConversation({ history: [], message: "", voiceName: voice });
-            const aiMessage: MessageData = { role: 'model', content: result.response };
-            await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
+            await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
             
             setIsThinking(false);
             if (result.audio) {
@@ -237,8 +239,7 @@ export default function TherapySession() {
           } catch(e) {
             console.error("Failed to generate initial greeting", e);
             const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
-            const aiMessage: MessageData = { role: 'model', content: initialGreeting };
-            await addDocumentNonBlocking(messagesCollectionRef, { role: 'model', content: [{text: initialGreeting}], createdAt: serverTimestamp() });
+            await addDoc(messagesCollectionRef, { role: 'model', content: [{text: initialGreeting}], createdAt: serverTimestamp() });
             setIsThinking(false);
           }
       })();
@@ -253,6 +254,7 @@ export default function TherapySession() {
 
   const handleDisclaimerAgree = async () => {
     setShowDisclaimer(false);
+    sessionStorage.setItem(`disclaimerAgreed_${sessionId}`, 'true');
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         setHasMicPermission(true);

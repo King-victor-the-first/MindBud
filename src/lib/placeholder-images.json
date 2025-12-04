@@ -13,6 +13,12 @@
       "imageHint": "Bloom AI"
     },
     {
+      "id": "therapy-session-ai-avatar",
+      "description": "Static AI avatar for text therapy session",
+      "imageUrl": "/mindbloomlogo.png",
+      "imageHint": "AI avatar"
+    },
+    {
       "id": "app-logo",
       "description": "The MindBud application logo",
       "imageUrl": "/mindbloomlogo.png",
