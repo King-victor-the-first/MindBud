@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect, UIEvent } from "react";
 import NextImage from "next/image";
+import Link from "next/link";
 import { format } from "date-fns";
 import { moderateGroupChatMessage } from "@/ai/flows/moderate-group-chat";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown } from "lucide-react";
+import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -72,7 +73,6 @@ export default function ChatInterface() {
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
-    // Show button if user has scrolled up more than 100px from the bottom
     if (scrollHeight - scrollTop - clientHeight > 100) {
       setShowScrollToBottom(true);
     } else {
@@ -186,9 +186,31 @@ export default function ChatInterface() {
   const loading = isSending || messagesLoading;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="relative flex-1">
-        <ScrollArea className="absolute inset-0 chat-background-pattern" viewportRef={scrollAreaRef} onScroll={handleScroll}>
+    <div className="flex-1 flex flex-col min-h-0 relative">
+
+      {/* New Fixed Header for Chat */}
+       <div className="fixed top-0 left-0 right-0 z-20 p-2 border-b flex-shrink-0 bg-background/80 backdrop-blur-sm md:ml-64">
+         <div className="flex items-center gap-2">
+            <Link href="/dashboard" passHref className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="text-center flex-1">
+              <h1 className="text-lg font-headline font-bold">Support Circle</h1>
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-primary" />
+                  Anonymous & Moderated
+              </p>
+            </div>
+            {/* Placeholder for potential actions on the right */}
+            <div className="w-10 h-10 md:hidden"/>
+         </div>
+       </div>
+
+
+      <div className="relative flex-1 mt-[68px]">
+        <ScrollArea className="absolute inset-0 chat-background-pattern pb-24" viewportRef={scrollAreaRef} onScroll={handleScroll}>
             <div className="flex flex-col gap-1 p-4">
             {messagesLoading && (
                 <div className="flex justify-center items-center h-full">
@@ -280,7 +302,7 @@ export default function ChatInterface() {
          {showScrollToBottom && (
           <Button
             onClick={() => scrollToBottom('smooth')}
-            className="absolute bottom-4 right-4 z-10 rounded-full h-10 w-10 p-2 shadow-lg"
+            className="absolute bottom-28 right-4 z-10 rounded-full h-10 w-10 p-2 shadow-lg"
             variant="secondary"
             size="icon"
           >
@@ -305,9 +327,11 @@ export default function ChatInterface() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <div className="sticky bottom-0 z-10 p-4 bg-card border-t flex-shrink-0">
+      
+      {/* New Fixed Input Area */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 p-2 bg-card border-t md:ml-64">
         {replyTo && (
-            <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm">
+            <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm mx-2">
                 <div>
                     <p className="font-semibold">Replying to {replyTo.userName}</p>
                     <p className="text-xs truncate text-muted-foreground">{replyTo.message || "Image"}</p>
@@ -318,7 +342,7 @@ export default function ChatInterface() {
             </div>
         )}
         {mediaFile && (
-            <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm">
+            <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm mx-2">
                 <div>
                     <p className="font-semibold">Attachment</p>
                     <p className="text-xs truncate text-muted-foreground">{mediaFile.name}</p>

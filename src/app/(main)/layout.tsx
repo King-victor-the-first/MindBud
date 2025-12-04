@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/firebase/provider';
 import BottomNavBar from '@/components/shared/BottomNavBar';
 import Sidebar from '@/components/shared/Sidebar';
 import { Loader2 } from 'lucide-react';
 import { usePresence } from '@/hooks/use-presence';
+import { cn } from '@/lib/utils';
 
 export default function MainLayout({
   children,
@@ -15,8 +16,9 @@ export default function MainLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
 
-  // Initialize the presence hook. This will run for any authenticated user within this layout.
+  // Use presence hook for any authenticated user within this layout.
   usePresence();
 
   useEffect(() => {
@@ -33,11 +35,20 @@ export default function MainLayout({
     );
   }
 
+  // Determine if the current page is the chat page.
+  const isChatPage = pathname.startsWith('/chat');
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 md:ml-64 md:pb-0 pb-28">{children}</main>
-      <BottomNavBar />
+      <main className={cn(
+        "flex-1 md:ml-64",
+        isChatPage ? "pb-0" : "md:pb-0 pb-28"
+      )}>
+        {children}
+      </main>
+      {/* Conditionally render the BottomNavBar */}
+      {!isChatPage && <BottomNavBar />}
     </div>
   );
 }

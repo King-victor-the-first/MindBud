@@ -1,19 +1,17 @@
-
 'use server';
 
 /**
  * @fileOverview A conversational AI flow for a therapy session.
- * 
- * - therapyConversation - A function that provides a conversational response.
- * - TherapyConversationInput - The input type for the therapyConversation function.
- * - TherapyConversationOutput - The return type for the therapyConversation function.
+ * Debugging Version: Fixes the 'history' property error by using 'messages'.
  */
 
+// 1. Imports
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
-import type { MessageData } from 'genkit/ai';
+
+// --- SCHEMAS ---
 
 const TherapyConversationInputSchema = z.object({
   history: z.array(z.object({
@@ -33,9 +31,13 @@ const TherapyConversationOutputSchema = z.object({
 
 export type TherapyConversationOutput = z.infer<typeof TherapyConversationOutputSchema>;
 
+// --- EXPORTED FUNCTION ---
+
 export async function therapyConversation(input: TherapyConversationInput): Promise<TherapyConversationOutput> {
   return therapyConversationFlow(input);
 }
+
+// --- PROMPTS ---
 
 const therapySystemPrompt = `You are 'Bud AI', a supportive AI companion for mental well-being.
 Your tone is warm, calm, patient, and understanding.
@@ -63,6 +65,8 @@ A crisis includes: suicidal ideation, self-harm, or abuse.
     * DO NOT BE WORDY (1-3 sentences).
 `;
 
+// --- HELPER FUNCTIONS ---
+
 async function toWav(
     pcmData: Buffer,
     channels = 1,
@@ -70,6 +74,9 @@ async function toWav(
     sampleWidth = 2
   ): Promise<string> {
     return new Promise((resolve, reject) => {
+      // DEBUG LOG
+      console.log(`🔊 toWav called: Buffer size ${pcmData.length}, Rate ${rate}`);
+      
       const writer = new wav.Writer({
         channels,
         sampleRate: rate,
@@ -77,7 +84,10 @@ async function toWav(
       });
   
       const bufs: any[] = [];
-      writer.on('error', reject);
+      writer.on('error', (err) => {
+        console.error("❌ WAV Writer Error:", err);
+        reject(err);
+      });
       writer.on('data', function (d) {
         bufs.push(d);
       });
@@ -90,6 +100,8 @@ async function toWav(
     });
 }
 
+// --- MAIN FLOW ---
+
 const therapyConversationFlow = ai.defineFlow(
   {
     name: 'therapyConversationFlow',
@@ -97,57 +109,96 @@ const therapyConversationFlow = ai.defineFlow(
     outputSchema: TherapyConversationOutputSchema,
   },
   async (input) => {
-    
-    // Step 1: Generate the text response.
-    const textResponse = await ai.generate({
-        model: 'googleai/gemini-pro',
-        system: therapySystemPrompt,
-        history: input.history as MessageData[],
-        prompt: input.message,
-    });
+    console.log("🚀 START: Therapy Flow Triggered");
+    console.log(`📝 User Message: "${input.message}"`);
+    console.log(`📂 History Length: ${input.history?.length || 0}`);
 
-    const responseText = textResponse.text;
-    if (!responseText) {
-        throw new Error('No text response was returned from the language model.');
-    }
-
-    // Step 2: Try to generate the audio from the text response.
     try {
-        const { media } = await ai.generate({
-            model: googleAI.model('gemini-2.5-flash-preview-tts'),
-            prompt: responseText,
-            config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: input.voiceName || 'Algenib' },
-                    },
-                },
-            },
+        // Step 1: Generate the text response.
+        console.log("⏳ Step 1: Generating Text with gemini-pro...");
+        
+        // --- FIX STARTS HERE ---
+        // 1. Construct the message history array manually
+        // This fixes the "property 'history' does not exist" error.
+        const conversationMessages = input.history.map((h) => ({
+            role: h.role,
+            content: [{ text: h.content }]
+        }));
+
+        // 2. Add the user's new message to the end
+        conversationMessages.push({
+            role: 'user',
+            content: [{ text: input.message }]
         });
 
-        if (!media) {
-            throw new Error('No media was returned from the TTS model.');
+        // 3. Call generate using 'messages' instead of history/prompt properties
+        const textResponse = await ai.generate({
+            model: 'googleai/gemini-pro', 
+            system: therapySystemPrompt,
+            messages: conversationMessages as any, // Cast to any to safely bypass strict type checks for now
+        });
+        // --- FIX ENDS HERE ---
+
+        const responseText = textResponse.text;
+        console.log("✅ Step 1 Complete. Response Preview:", responseText.substring(0, 50) + "...");
+
+        if (!responseText) {
+            throw new Error('No text response was returned from the language model.');
         }
-        
-        const audioBuffer = Buffer.from(
-        media.url.substring(media.url.indexOf(',') + 1),
-        'base64'
-        );
-        const audioBase64 = await toWav(audioBuffer);
 
-        return {
-            response: responseText,
-            audio: 'data:audio/wav;base64,' + audioBase64,
-        };
+        // Step 2: Try to generate the audio from the text response.
+        console.log("⏳ Step 2: Attempting Audio Generation (TTS)...");
+        try {
+            const ttsModelName = 'gemini-1.5-flash'; 
+            console.log(`🔧 Using Model for TTS: ${ttsModelName}`);
 
-    } catch (error) {
-        console.error("Could not generate TTS audio, returning text only. Error:", error);
-        // If TTS fails (e.g., rate limit), return the text response without audio.
-        return {
-            response: responseText,
-            audio: undefined,
-        };
+            const { media } = await ai.generate({
+                model: googleAI.model(ttsModelName),
+                prompt: responseText,
+                config: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: input.voiceName || 'Algenib' },
+                        },
+                    },
+                },
+            });
+
+            if (!media) {
+                console.warn("⚠️ AI returned no media object.");
+                throw new Error('No media was returned from the TTS model.');
+            }
+            
+            console.log("🔍 Media Object Received:", {
+                contentType: media.contentType,
+                urlStart: media.url.substring(0, 30) 
+            });
+
+            const audioBuffer = Buffer.from(
+                media.url.substring(media.url.indexOf(',') + 1),
+                'base64'
+            );
+            
+            console.log("⏳ Converting Buffer to WAV format...");
+            const audioBase64 = await toWav(audioBuffer);
+            console.log("✅ WAV Conversion Successful.");
+
+            return {
+                response: responseText,
+                audio: 'data:audio/wav;base64,' + audioBase64,
+            };
+
+        } catch (audioError) {
+            console.error("❌ Audio Generation Failed (Continuing with text only):", audioError);
+            return {
+                response: responseText,
+                audio: undefined, 
+            };
+        }
+    } catch (e) {
+        console.error("❌ CRITICAL FLOW ERROR:", e);
+        throw e; 
     }
   }
 );
