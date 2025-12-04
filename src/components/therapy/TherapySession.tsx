@@ -11,7 +11,7 @@ import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
 import type { MessageData } from 'genkit/ai';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, serverTimestamp, addDoc } from "firebase/firestore";
+import { collection, query, orderBy, serverTimestamp, addDoc, doc } from "firebase/firestore";
 import type { TherapyMessage } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useToast } from "@/hooks/use-toast";
@@ -47,7 +47,11 @@ export default function TherapySession() {
 
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
 
-  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content as any })) : [];
+  const history: MessageData[] = messages ? messages.map(m => ({ 
+      role: m.role, 
+      content: Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : '' as any 
+  })) : [];
+  
   const transcript = messages ? messages.map(m => {
     const textContent = Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : (typeof m.content === 'string' ? m.content : '');
     return { speaker: m.role, text: textContent };
@@ -376,5 +380,3 @@ export default function TherapySession() {
     </div>
   );
 }
-
-    
