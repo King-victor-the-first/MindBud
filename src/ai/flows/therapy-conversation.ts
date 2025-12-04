@@ -128,37 +128,29 @@ const therapyConversationFlow = ai.defineFlow(
         };
     }
     
-    // 2. Generate the text response from the language model
-    const textResponse = await ai.generate({
+    // 2. Generate the text and audio response from the language model in a single call
+    const llmResponse = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
         config: {
             temperature: 0.7,
-        },
-        system: therapySystemPrompt,
-        history: cleanHistory,
-        prompt: input.message,
-    });
-
-    const responseText = textResponse.text;
-    if (!responseText) {
-        throw new Error("Failed to generate a text response from the AI.");
-    }
-
-    // 3. Generate the audio from the text response
-    const audioResponse = await ai.generate({
-        model: googleAI.model('gemini-2.5-flash-preview-tts'),
-        config: {
-            responseModalities: ['AUDIO'],
+            responseModalities: ['TEXT', 'AUDIO'],
             speechConfig: {
                 voiceConfig: {
                     prebuiltVoiceConfig: { voiceName: input.voiceName },
                 },
             },
         },
-        prompt: responseText,
+        system: therapySystemPrompt,
+        history: cleanHistory,
+        prompt: input.message,
     });
 
-    const responseMedia = audioResponse.media;
+    const responseText = llmResponse.text;
+    if (!responseText) {
+        throw new Error("Failed to generate a text response from the AI.");
+    }
+
+    const responseMedia = llmResponse.media;
     if (!responseMedia) {
       throw new Error('No media was returned from the TTS model.');
     }
