@@ -119,24 +119,17 @@ const therapyConversationFlow = ai.defineFlow(
         console.log("⏳ Step 1: Generating Text with gemini-pro...");
         
         // Normalize the history to ensure content is always a string.
-        const normalizedHistory = input.history.map(msg => {
-          const textContent = Array.isArray(msg.content) 
-            ? msg.content.map(p => p.text).join('') 
-            : msg.content;
-          return { role: msg.role, content: textContent };
-        });
-
-        const allMessages = [...normalizedHistory, { role: 'user' as const, content: input.message }];
-
-        const conversationMessages = allMessages
-            .filter(h => h.content && h.content.trim() !== '')
-            .map((h) => ({
-                role: h.role,
-                content: [{ text: h.content }]
-            }));
+        const cleanHistory = input.history
+          .map(msg => {
+            const textContent = Array.isArray(msg.content)
+              ? msg.content.map(p => p.text).join('')
+              : msg.content;
+            return { role: msg.role, content: [{ text: textContent }] };
+          })
+          .filter(h => h.content[0].text && h.content[0].text.trim() !== '');
         
         // Handle the edge case where there are no valid messages to send.
-        if (conversationMessages.length === 0 && input.message.trim() === '') {
+        if (cleanHistory.length === 0 && input.message.trim() === '') {
             const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
              const { media } = await ai.generate({
                 model: googleAI.model('gemini-2.5-flash-preview-tts'),
@@ -161,9 +154,13 @@ const therapyConversationFlow = ai.defineFlow(
         }
         
         const textResponse = await ai.generate({
-            model: 'googleai/gemini-pro', 
+            model: 'googleai/gemini-2.5-flash',
+            config: {
+                temperature: 0.7,
+            },
             system: therapySystemPrompt,
-            messages: conversationMessages as any,
+            history: cleanHistory as any,
+            prompt: input.message,
         });
 
         const responseText = textResponse.text;
