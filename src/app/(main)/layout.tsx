@@ -36,7 +36,7 @@ export default function MainLayout({
   }
 
   // Determine if the current page should hide the main layout's navbars.
-  const isImmersivePage = pathname.startsWith('/chat') || pathname.startsWith('/therapy-session');
+  const isImmersivePage = pathname.startsWith('/chat');
 
   return (
     <div className="flex min-h-screen">
