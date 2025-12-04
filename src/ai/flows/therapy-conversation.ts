@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -117,27 +118,46 @@ const therapyConversationFlow = ai.defineFlow(
         // Step 1: Generate the text response.
         console.log("⏳ Step 1: Generating Text with gemini-pro...");
         
-        // --- FIX STARTS HERE ---
-        // 1. Construct the message history array manually
-        // This fixes the "property 'history' does not exist" error.
-        const conversationMessages = input.history.map((h) => ({
-            role: h.role,
-            content: [{ text: h.content }]
-        }));
+        // Construct the message history array, filtering out empty messages.
+        const allMessages = [...input.history, { role: 'user' as const, content: input.message }];
 
-        // 2. Add the user's new message to the end
-        conversationMessages.push({
-            role: 'user',
-            content: [{ text: input.message }]
-        });
+        const conversationMessages = allMessages
+            .filter(h => h.content.trim() !== '') // FIX: Filter out empty content
+            .map((h) => ({
+                role: h.role,
+                content: [{ text: h.content }]
+            }));
+        
+        // Handle the edge case where there are no valid messages to send.
+        if (conversationMessages.length === 0 && input.message.trim() === '') {
+            const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
+             const { media } = await ai.generate({
+                model: googleAI.model('gemini-1.5-flash-preview-0514'),
+                prompt: initialGreeting,
+                 config: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: input.voiceName || 'Algenib' },
+                        },
+                    },
+                },
+            });
+             if (!media) { throw new Error('Initial greeting audio generation failed.'); }
+            const audioBuffer = Buffer.from(media.url.substring(media.url.indexOf(',') + 1), 'base64');
+            const audioBase64 = await toWav(audioBuffer);
 
-        // 3. Call generate using 'messages' instead of history/prompt properties
+            return {
+                response: initialGreeting,
+                audio: 'data:audio/wav;base64,' + audioBase64,
+            };
+        }
+        
         const textResponse = await ai.generate({
             model: 'googleai/gemini-pro', 
             system: therapySystemPrompt,
-            messages: conversationMessages as any, // Cast to any to safely bypass strict type checks for now
+            messages: conversationMessages as any,
         });
-        // --- FIX ENDS HERE ---
 
         const responseText = textResponse.text;
         console.log("✅ Step 1 Complete. Response Preview:", responseText.substring(0, 50) + "...");
@@ -149,7 +169,7 @@ const therapyConversationFlow = ai.defineFlow(
         // Step 2: Try to generate the audio from the text response.
         console.log("⏳ Step 2: Attempting Audio Generation (TTS)...");
         try {
-            const ttsModelName = 'gemini-1.5-flash'; 
+            const ttsModelName = 'gemini-1.5-flash-preview-0514'; 
             console.log(`🔧 Using Model for TTS: ${ttsModelName}`);
 
             const { media } = await ai.generate({
@@ -202,3 +222,5 @@ const therapyConversationFlow = ai.defineFlow(
     }
   }
 );
+
+    
