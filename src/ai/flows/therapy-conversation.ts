@@ -15,6 +15,8 @@ import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
 import type { MessageData } from 'genkit/ai';
 
+export const maxDuration = 120;
+
 // --- SCHEMAS ---
 
 const TherapyConversationInputSchema = z.object({
@@ -94,10 +96,9 @@ const therapyConversationFlow = ai.defineFlow(
         throw new Error("Server configuration error: Missing API Key.");
     }
     
-    // 1. Normalize history to ensure content is always a string
+    // 1. Normalize history to ensure content is always a simple string
     const cleanHistory: MessageData[] = input.history
       .map(msg => {
-          // Extract text content, whether it's a string or inside an array of parts
           const textContent = Array.isArray(msg.content) 
               ? msg.content[0]?.text || ''
               : typeof msg.content === 'string' ? msg.content : '';
@@ -129,34 +130,42 @@ const therapyConversationFlow = ai.defineFlow(
         };
     }
     
-    // 2. Generate the text and audio response from the language model in a single call
-    const response = await ai.generate({
+    // 2. Generate the text response from the language model
+    const textResponse = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
         config: {
             temperature: 0.7,
-            responseModalities: ['TEXT', 'AUDIO'],
+        },
+        system: therapySystemPrompt,
+        history: cleanHistory,
+        prompt: input.message,
+    });
+
+    const responseText = textResponse.text;
+    if (!responseText) {
+        throw new Error("Failed to generate a text response from the AI.");
+    }
+
+    // 3. Generate the audio from the text response
+    const audioResponse = await ai.generate({
+        model: googleAI.model('gemini-2.5-flash-preview-tts'),
+        config: {
+            responseModalities: ['AUDIO'],
             speechConfig: {
                 voiceConfig: {
                     prebuiltVoiceConfig: { voiceName: input.voiceName },
                 },
             },
         },
-        system: therapySystemPrompt,
-        history: cleanHistory,
-        prompt: input.message,
+        prompt: responseText,
     });
-    
-    const responseText = response.text;
-    const responseMedia = response.media;
 
-    if (!responseText) {
-        throw new Error("Failed to generate a text response from the AI.");
-    }
+    const responseMedia = audioResponse.media;
     if (!responseMedia) {
-      throw new Error('No media was returned from the multimodal model.');
+      throw new Error('No media was returned from the TTS model.');
     }
 
-    // 3. Convert the audio buffer to a WAV data URI
+    // 4. Convert the audio buffer to a WAV data URI
     const audioBuffer = Buffer.from(
       responseMedia.url.substring(responseMedia.url.indexOf(',') + 1),
       'base64'
