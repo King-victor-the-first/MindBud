@@ -116,7 +116,7 @@ const therapyConversationFlow = ai.defineFlow(
 
     try {
         // Step 1: Generate the text response.
-        console.log("⏳ Step 1: Generating Text with gemini-pro...");
+        console.log("⏳ Step 1: Generating Text with gemini-2.5-flash...");
         
         // Normalize the history to ensure content is always a string.
         const cleanHistory = input.history
