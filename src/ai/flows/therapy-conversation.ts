@@ -17,7 +17,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 const TherapyConversationInputSchema = z.object({
   history: z.array(z.object({
     role: z.enum(['user', 'model']),
-    content: z.string()
+    content: z.any() // Use z.any() for flexibility
   })).describe('The conversation history.'),
   message: z.string().describe("The user's latest message."),
   voiceName: z.string().optional().describe("The voice to use for the TTS response."),
@@ -118,11 +118,18 @@ const therapyConversationFlow = ai.defineFlow(
         // Step 1: Generate the text response.
         console.log("⏳ Step 1: Generating Text with gemini-pro...");
         
-        // Construct the message history array, filtering out empty messages.
-        const allMessages = [...input.history, { role: 'user' as const, content: input.message }];
+        // Normalize the history to ensure content is always a string.
+        const normalizedHistory = input.history.map(msg => {
+          const textContent = Array.isArray(msg.content) 
+            ? msg.content.map(p => p.text).join('') 
+            : msg.content;
+          return { role: msg.role, content: textContent };
+        });
+
+        const allMessages = [...normalizedHistory, { role: 'user' as const, content: input.message }];
 
         const conversationMessages = allMessages
-            .filter(h => h.content.trim() !== '') // FIX: Filter out empty content
+            .filter(h => h.content && h.content.trim() !== '')
             .map((h) => ({
                 role: h.role,
                 content: [{ text: h.content }]
@@ -222,5 +229,3 @@ const therapyConversationFlow = ai.defineFlow(
     }
   }
 );
-
-    
