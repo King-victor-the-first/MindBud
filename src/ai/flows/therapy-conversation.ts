@@ -132,7 +132,7 @@ const therapyConversationFlow = ai.defineFlow(
         if (conversationMessages.length === 0 && input.message.trim() === '') {
             const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
              const { media } = await ai.generate({
-                model: googleAI.model('gemini-1.5-flash-preview-0514'),
+                model: googleAI.model('gemini-2.5-flash-preview-tts'),
                 prompt: initialGreeting,
                  config: {
                     responseModalities: ['AUDIO'],
@@ -169,7 +169,7 @@ const therapyConversationFlow = ai.defineFlow(
         // Step 2: Try to generate the audio from the text response.
         console.log("⏳ Step 2: Attempting Audio Generation (TTS)...");
         try {
-            const ttsModelName = 'gemini-1.5-flash-preview-0514'; 
+            const ttsModelName = 'gemini-2.5-flash-preview-tts'; 
             console.log(`🔧 Using Model for TTS: ${ttsModelName}`);
 
             const { media } = await ai.generate({
