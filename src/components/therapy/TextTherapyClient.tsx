@@ -44,7 +44,12 @@ export default function TextTherapyClient() {
   }, [user, firestore, sessionId]);
 
   const { data: messages, isLoading: messagesLoading } = useCollection<TherapyMessage>(messagesQuery);
-  const history: MessageData[] = messages ? messages.map(m => ({ role: m.role, content: m.content as any })) : [];
+  
+  // This history transformation is for the `therapyConversation` flow which has a specific format.
+  const history: MessageData[] = messages ? messages.map(m => ({ 
+      role: m.role, 
+      content: Array.isArray(m.content) && m.content[0]?.text ? m.content[0].text : (typeof m.content === 'string' ? m.content : '') as any 
+  })) : [];
   
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
