@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, Smile, ClipboardList, Bot, Settings, LineChart } from 'lucide-react';
@@ -22,6 +23,14 @@ const navItems = [
 export default function BottomNavBar() {
   const pathname = usePathname();
   const { count: unreadCount, hasMention } = useUnreadChatMessages();
+  const [isHubOpen, setIsHubOpen] = useState(false);
+
+  const handleHubItemClick = () => {
+    // Standard mobile breakpoint is 768px
+    if (window.innerWidth < 768) {
+      setIsHubOpen(false);
+    }
+  };
 
   return (
     <footer className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
@@ -31,7 +40,7 @@ export default function BottomNavBar() {
           if (item.icon === 'siri') {
             return (
               <div key={item.href} className="flex justify-center" style={{ gridColumn: '3' }}>
-                <Popover>
+                <Popover open={isHubOpen} onOpenChange={setIsHubOpen}>
                   <PopoverTrigger asChild>
                     <button
                       className="relative flex items-center justify-center w-16 h-16 -translate-y-4 bg-card rounded-full shadow-lg border-2 border-primary mx-auto"
@@ -54,10 +63,10 @@ export default function BottomNavBar() {
                         </p>
                       </div>
                       <div className="grid gap-2">
-                        <Link href="/therapy" passHref>
+                        <Link href="/therapy" passHref onClick={handleHubItemClick}>
                            <Button variant={pathname.startsWith('/therapy') ? "default" : "outline"} className="w-full justify-start">AI Therapy Session</Button>
                         </Link>
-                        <Link href="/chat" passHref>
+                        <Link href="/chat" passHref onClick={handleHubItemClick}>
                           <div className="relative w-full">
                              <Button variant={pathname.startsWith('/chat') ? "default" : "outline"} className="w-full justify-start">
                                Support Circle
