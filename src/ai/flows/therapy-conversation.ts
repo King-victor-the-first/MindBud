@@ -15,8 +15,6 @@ import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
 import type { MessageData } from 'genkit/ai';
 
-export const maxDuration = 120;
-
 // --- SCHEMAS ---
 
 const TherapyConversationInputSchema = z.object({
