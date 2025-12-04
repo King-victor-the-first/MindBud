@@ -15,9 +15,6 @@ import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
 import type { MessageData } from 'genkit/ai';
 
-// Increase the timeout for this server action to 2 minutes
-export const maxDuration = 120;
-
 // --- SCHEMAS ---
 
 const TherapyConversationInputSchema = z.object({
