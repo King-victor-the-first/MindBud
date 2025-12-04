@@ -129,40 +129,36 @@ const therapyConversationFlow = ai.defineFlow(
         };
     }
     
-    // 2. Generate the text response from the language model
-    const textResponse = await ai.generate({
+    // 2. Generate the text and audio response from the language model in a single call
+    const response = await ai.generate({
         model: 'googleai/gemini-2.5-flash',
-        config: { temperature: 0.7 },
+        config: {
+            temperature: 0.7,
+            responseModalities: ['TEXT', 'AUDIO'],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: input.voiceName },
+                },
+            },
+        },
         system: therapySystemPrompt,
         history: cleanHistory,
         prompt: input.message,
     });
     
-    const responseText = textResponse.text;
+    const responseText = response.text;
+    const responseMedia = response.media;
+
     if (!responseText) {
         throw new Error("Failed to generate a text response from the AI.");
     }
-
-    // 3. Generate the audio from the text response
-    const { media } = await ai.generate({
-      model: googleAI.model('gemini-2.5-flash-preview-tts'),
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            prebuiltVoiceConfig: { voiceName: input.voiceName },
-          },
-        },
-      },
-      prompt: responseText,
-    });
-
-    if (!media) {
-      throw new Error('No media was returned from the TTS model.');
+    if (!responseMedia) {
+      throw new Error('No media was returned from the multimodal model.');
     }
 
+    // 3. Convert the audio buffer to a WAV data URI
     const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
+      responseMedia.url.substring(responseMedia.url.indexOf(',') + 1),
       'base64'
     );
     const audioBase64 = await toWav(audioBuffer);
