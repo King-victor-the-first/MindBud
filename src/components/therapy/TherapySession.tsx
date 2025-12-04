@@ -10,7 +10,8 @@ import { cn } from "@/lib/utils";
 import DisclaimerDialog from "./DisclaimerDialog";
 import { therapyConversation } from "@/ai/flows/therapy-conversation";
 import type { MessageData } from 'genkit/ai';
-import { useUser, useFirestore, useCollection, useMemoFirebase, addDoc, collection, serverTimestamp } from "@/firebase";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, serverTimestamp, addDoc } from "firebase/firestore";
 import type { TherapyMessage } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { useToast } from "@/hooks/use-toast";
@@ -375,3 +376,5 @@ export default function TherapySession() {
     </div>
   );
 }
+
+    
