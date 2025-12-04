@@ -1,13 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { OrbVisualizer } from '@/components/therapy/OrbVisualizer';
 import { useLiveSession } from '@/hooks/useLiveSession';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowLeft, BrainCircuit, Mic, Phone, MessageSquare, Mic2 } from 'lucide-react';
 import Link from 'next/link';
-import { ArrowLeft, BrainCircuit } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import TextTherapyClient from '@/components/therapy/TextTherapyClient';
 
-export default function LiveTherapyPage() {
+export default function TherapySessionPage() {
+  const [mode, setMode] = useState<'voice' | 'text'>('voice');
   const {
     connect,
     disconnect,
@@ -27,26 +30,8 @@ export default function LiveTherapyPage() {
     return 'Ready to connect.';
   };
 
-  return (
-    <div className="h-screen w-full flex flex-col bg-gray-900 text-white overflow-hidden">
-      <header className="fixed top-0 left-0 right-0 z-20 p-2 border-b border-white/10 flex-shrink-0 bg-gray-900/80 backdrop-blur-sm">
-        <div className="flex items-center gap-2">
-          <Link href="/dashboard" passHref>
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="text-center flex-1">
-            <h1 className="text-lg font-headline font-bold">Live AI Session</h1>
-            <p className="text-xs text-gray-400 flex items-center justify-center gap-1">
-              <BrainCircuit className="w-3 h-3 text-primary" />
-              Powered by Gemini
-            </p>
-          </div>
-          <div className="w-10 h-10" />
-        </div>
-      </header>
-
+  const VoiceUI = (
+    <>
       <div className="flex-1 flex flex-col items-center justify-center p-4 text-center relative pt-16">
         <OrbVisualizer
           isConnecting={isConnecting}
@@ -70,8 +55,9 @@ export default function LiveTherapyPage() {
           <Button
             onClick={connect}
             size="lg"
-            className="bg-green-500 hover:bg-green-600 rounded-full w-48"
+            className="bg-primary hover:bg-primary/90 rounded-full w-48 h-16 text-lg"
           >
+            <Mic className="mr-2 h-6 w-6" />
             Connect
           </Button>
         ) : (
@@ -79,16 +65,52 @@ export default function LiveTherapyPage() {
             onClick={disconnect}
             size="lg"
             variant="destructive"
-            className="rounded-full w-48"
+            className="rounded-full w-48 h-16 text-lg"
             disabled={isConnecting}
           >
             {isConnecting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : <Phone className="mr-2 h-6 w-6" />}
             {isConnecting ? 'Connecting...' : 'Disconnect'}
           </Button>
         )}
       </div>
+    </>
+  );
+
+  return (
+    <div className="h-screen w-full flex flex-col bg-gray-900 text-white overflow-hidden">
+      <header className="fixed top-0 left-0 right-0 z-20 p-2 flex-shrink-0 bg-gray-900/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between gap-2">
+          <Link href="/dashboard" passHref>
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          </Link>
+          
+          <div className="flex items-center justify-center p-1 bg-black/20 rounded-full border border-white/10">
+            <Button 
+                variant={mode === 'text' ? 'secondary' : 'ghost'} 
+                onClick={() => setMode('text')}
+                className="rounded-full h-8 px-4"
+            >
+                <MessageSquare className="w-4 h-4"/>
+            </Button>
+            <Button 
+                variant={mode === 'voice' ? 'secondary' : 'ghost'} 
+                onClick={() => setMode('voice')}
+                className="rounded-full h-8 px-4"
+            >
+                 <Mic2 className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="w-10 h-10" /> 
+        </div>
+      </header>
+
+      {mode === 'voice' ? VoiceUI : <TextTherapyClient isImmersive={true} />}
+      
     </div>
   );
 }

@@ -5,6 +5,7 @@ export default function TherapySessionLayout({
 }) {
   return (
     <div className="bg-background">
+      {/* This layout provides a clean slate, removing the main sidebar and navbars */}
       <main>{children}</main>
     </div>
   );

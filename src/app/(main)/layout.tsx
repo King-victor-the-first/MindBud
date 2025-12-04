@@ -35,20 +35,20 @@ export default function MainLayout({
     );
   }
 
-  // Determine if the current page is the chat page.
-  const isChatPage = pathname.startsWith('/chat');
+  // Determine if the current page should hide the main layout's navbars.
+  const isImmersivePage = pathname.startsWith('/chat') || pathname.startsWith('/therapy-session');
 
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <main className={cn(
         "flex-1 md:ml-64",
-        isChatPage ? "pb-0" : "md:pb-0 pb-28"
+        isImmersivePage ? "pb-0" : "md:pb-0 pb-28" 
       )}>
         {children}
       </main>
       {/* Conditionally render the BottomNavBar */}
-      {!isChatPage && <BottomNavBar />}
+      {!isImmersivePage && <BottomNavBar />}
     </div>
   );
 }

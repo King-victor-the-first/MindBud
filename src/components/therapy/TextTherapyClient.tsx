@@ -19,10 +19,14 @@ import DisclaimerDialog from "./DisclaimerDialog";
 import { useToast } from "@/hooks/use-toast";
 import type { MessageData } from 'genkit/ai';
 
-export default function TextTherapyClient() {
+type TextTherapyClientProps = {
+  isImmersive?: boolean;
+}
+
+export default function TextTherapyClient({ isImmersive = false }: TextTherapyClientProps) {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [showDisclaimer, setShowDisclaimer] = useState(!isImmersive); // Only show disclaimer if not in immersive mode
   const [isMounted, setIsMounted] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +60,11 @@ export default function TextTherapyClient() {
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    // If immersive, we can assume disclaimer was handled before
+    if (isImmersive) {
+      setShowDisclaimer(false);
+    }
+  }, [isImmersive]);
 
   useEffect(() => {
     scrollToBottom();
@@ -75,7 +83,7 @@ export default function TextTherapyClient() {
       const result = await therapyConversation({
         history: history,
         message: userMessage,
-        voiceName: 'Algenib', // Voice is not used but required by schema
+        voiceName: localStorage.getItem('aiVoice') || 'Algenib',
       });
       
       await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
@@ -125,27 +133,39 @@ export default function TextTherapyClient() {
     return <DisclaimerDialog onAgree={() => setShowDisclaimer(false)} />;
   }
 
-  return (
-    <div className="h-screen flex flex-col bg-muted/20">
-      <header className="fixed top-0 left-0 right-0 z-20 p-2 border-b flex-shrink-0 bg-background/80 backdrop-blur-sm md:ml-64">
-        <div className="flex items-center gap-2">
-          <Link href="/therapy" passHref className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div className="text-center flex-1">
-            <h1 className="text-lg font-headline font-bold">AI Therapist</h1>
-            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <BrainCircuit className="w-3 h-3 text-primary" />
-              Your Private Session
-            </p>
-          </div>
-          <div className="w-10 h-10 md:hidden" />
-        </div>
-      </header>
+  // Conditional rendering for immersive mode
+  const MainContainer = isImmersive ? 'div' : ScrollArea;
+  const mainContainerProps = isImmersive ? 
+    { className: "flex-1 chat-background-pattern pb-24 pt-16" } : 
+    { className: "flex-1 chat-background-pattern pb-24 pt-16" };
 
-      <ScrollArea className="flex-1 chat-background-pattern pb-24 pt-16">
+  return (
+    <div className={cn("h-screen flex flex-col", isImmersive ? "bg-gray-900" : "bg-muted/20")}>
+      {!isImmersive && (
+        <header className="fixed top-0 left-0 right-0 z-20 p-2 border-b flex-shrink-0 bg-background/80 backdrop-blur-sm md:ml-64">
+          <div className="flex items-center gap-2">
+            <Link href="/therapy" passHref className="md:hidden">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="text-center flex-1">
+              <h1 className="text-lg font-headline font-bold">AI Therapist</h1>
+              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+                <BrainCircuit className="w-3 h-3 text-primary" />
+                Your Private Session
+              </p>
+            </div>
+             <Link href={`/therapy-session/${sessionId}`} passHref>
+                <Button variant="outline" size="icon" aria-label="Start Live Voice Session">
+                    <Mic className="w-5 h-5 text-primary"/>
+                </Button>
+             </Link>
+          </div>
+        </header>
+      )}
+
+      <MainContainer {...mainContainerProps}>
         <div className="p-4 space-y-4">
           {messagesLoading && messages?.length === 0 && (
             <div className="flex justify-center items-center h-full">
@@ -168,7 +188,7 @@ export default function TextTherapyClient() {
                     "max-w-[75%] rounded-xl px-3 py-2 shadow-sm text-sm",
                     isUser
                       ? "bg-primary text-primary-foreground rounded-br-none"
-                      : "bg-card text-card-foreground rounded-bl-none"
+                      : isImmersive ? "bg-gray-700 text-gray-200 rounded-bl-none" : "bg-card text-card-foreground rounded-bl-none"
                   )}
                 >
                   {textContent}
@@ -178,9 +198,12 @@ export default function TextTherapyClient() {
           })}
         </div>
         <div ref={messagesEndRef} />
-      </ScrollArea>
+      </MainContainer>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 p-2 bg-card border-t md:ml-64">
+      <div className={cn(
+        "z-20 p-2 bg-card border-t",
+        isImmersive ? "bg-gray-800 border-t-white/10" : "fixed bottom-0 left-0 right-0 md:ml-64"
+        )}>
         <div className="flex items-center gap-2">
           <Input
             placeholder="Type your message..."
@@ -188,14 +211,9 @@ export default function TextTherapyClient() {
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === "Enter" && handleSend()}
             disabled={isSending}
-            className="flex-1"
+            className={cn("flex-1", isImmersive && "bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 rounded-full px-4")}
           />
-          <Link href={`/therapy-session/${sessionId}`} passHref>
-             <Button variant="outline" size="icon" aria-label="Start Live Voice Session">
-                <Mic className="w-5 h-5 text-primary"/>
-             </Button>
-          </Link>
-          <Button onClick={handleSend} disabled={isSending || !input.trim()} size="icon">
+          <Button onClick={handleSend} disabled={isSending || !input.trim()} size="icon" className={cn(isImmersive && "rounded-full bg-primary")}>
             {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
