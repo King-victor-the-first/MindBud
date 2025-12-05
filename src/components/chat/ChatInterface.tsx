@@ -57,6 +57,10 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
   const { user } = useUser();
   const firestore = useFirestore();
 
+  const [isListening, setIsListening] = useState(false);
+  const [speechApiSupported, setSpeechApiSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -77,6 +81,53 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechApiSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            }
+        }
+        if (finalTranscript) {
+            setInput(prev => prev ? prev + ' ' + finalTranscript : finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        toast({ title: "Voice Error", description: event.error, variant: "destructive" });
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [toast]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      setInput(prev => prev ? prev + ' ' : '');
+      recognitionRef.current.start();
+    }
+    setIsListening(!isListening);
+  };
+
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
@@ -370,13 +421,31 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
             className="hidden"
             accept="image/*"
           />
-          <Input
-            placeholder="Type a supportive message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            disabled={loading}
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Type a supportive message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              disabled={loading}
+              className={cn(speechApiSupported && "pr-10")}
+            />
+             {speechApiSupported && (
+                <Button 
+                    type="button" 
+                    size="icon" 
+                    variant="ghost"
+                    onClick={toggleListening}
+                    className={cn(
+                        "absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary",
+                        isListening && "text-red-500 animate-pulse"
+                    )}
+                    aria-label={isListening ? "Stop recording" : "Start recording"}
+                >
+                   <Mic className="w-4 h-4" />
+                </Button>
+            )}
+          </div>
           <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>

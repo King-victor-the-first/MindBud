@@ -28,13 +28,16 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
   const [isSending, setIsSending] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(!isImmersive); // Only show disclaimer if not in immersive mode
   const [isMounted, setIsMounted] = useState(false);
+  const { toast } = useToast();
+
+  const [isListening, setIsListening] = useState(false);
+  const [speechApiSupported, setSpeechApiSupported] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
   const firestore = useFirestore();
   const params = useParams();
-  const router = useRouter();
-  const { toast } = useToast();
   
   const sessionId = params.id as string;
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai-avatar") || { imageUrl: "/placeholder.svg", imageHint: "AI avatar"};
@@ -60,7 +63,6 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
 
   useEffect(() => {
     setIsMounted(true);
-    // If immersive, we can assume disclaimer was handled before
     if (isImmersive) {
       setShowDisclaimer(false);
     }
@@ -69,6 +71,53 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      setSpeechApiSupported(true);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event) => {
+        let finalTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+                finalTranscript += event.results[i][0].transcript;
+            }
+        }
+        if (finalTranscript) {
+            setInput(prev => prev ? prev + ' ' + finalTranscript : finalTranscript);
+        }
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error", event.error);
+        toast({ title: "Voice Error", description: event.error, variant: "destructive" });
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, [toast]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) return;
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      setInput(prev => prev ? prev + ' ' : '');
+      recognitionRef.current.start();
+    }
+    setIsListening(!isListening);
+  };
+
 
   const handleSend = async () => {
     if (!input.trim() || !user || !sessionId) return;
@@ -133,7 +182,6 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
     return <DisclaimerDialog onAgree={() => setShowDisclaimer(false)} />;
   }
 
-  // Conditional rendering for immersive mode
   const MainContainer = isImmersive ? 'div' : ScrollArea;
   const mainContainerProps = isImmersive ? 
     { className: "flex-1 chat-background-pattern pb-24 pt-16" } : 
@@ -205,14 +253,31 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
         isImmersive ? "bg-gray-800 border-t-white/10" : "fixed bottom-0 left-0 right-0 md:ml-64"
         )}>
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Type your message..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            disabled={isSending}
-            className={cn("flex-1", isImmersive && "bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 rounded-full px-4")}
-          />
+          <div className="relative flex-1">
+            <Input
+              placeholder="Type your message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              disabled={isSending}
+              className={cn("flex-1", isImmersive && "bg-gray-700 border-gray-600 text-white placeholder:text-gray-400 rounded-full px-4", speechApiSupported && "pr-10")}
+            />
+            {speechApiSupported && (
+                <Button 
+                    type="button" 
+                    size="icon" 
+                    variant="ghost"
+                    onClick={toggleListening}
+                    className={cn(
+                        "absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary",
+                        isListening && "text-red-500 animate-pulse"
+                    )}
+                    aria-label={isListening ? "Stop recording" : "Start recording"}
+                >
+                   <Mic className="w-4 h-4" />
+                </Button>
+            )}
+          </div>
           <Button onClick={handleSend} disabled={isSending || !input.trim()} size="icon" className={cn(isImmersive && "rounded-full bg-primary")}>
             {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
