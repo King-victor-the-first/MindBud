@@ -25,7 +25,7 @@ export default function TherapyPage() {
       
       <div className="mb-8 text-center">
         {immediateSessionId ? (
-            <Link href={`/therapy/immediate-${immediateSessionId}`} passHref>
+            <Link href={`/therapy-session/immediate-${immediateSessionId}`} passHref>
                 <Button size="lg" className="w-full max-w-xs mx-auto">
                     <Zap className="mr-2 h-5 w-5" />
                     Start Immediate Session
