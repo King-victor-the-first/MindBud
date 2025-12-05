@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from "@google/genai";
 import {
   arrayBufferToBase64,
   createPcmBlob,
@@ -76,7 +76,7 @@ export function useLiveSession() {
       if (!apiKey) {
         throw new Error('Missing Gemini API Key.');
       }
-      const ai = new GoogleGenerativeAI(apiKey);
+      const ai = new GoogleGenAI({ apiKey });
       const session = await ai.live.connect({
         model: MODEL_NAME,
       });

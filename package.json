@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -61,7 +62,8 @@
     "tailwindcss-animate": "^1.0.7",
     "wav": "^1.0.2",
     "zod": "^3.24.2",
-    "zustand": "4.5.2"
+    "zustand": "4.5.2",
+    "@google/genai": "1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.25",
