@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 import TextTherapyClient from '@/components/therapy/TextTherapyClient';
 
 export default function TherapySessionPage() {
-  const [mode, setMode] = useState<'voice' | 'text'>('voice');
+  const [mode, setMode] = useState<'voice' | 'text'>('text');
   const {
     connect,
     disconnect,
