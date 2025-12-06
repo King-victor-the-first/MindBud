@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import TextTherapyClient from '@/components/therapy/TextTherapyClient';
 
 export default function TherapySessionPage() {
-  const [mode, setMode] = useState<'voice' | 'text'>('text');
+  const [mode, setMode] = useState<'text' | 'voice'>('text');
   const {
     connect,
     disconnect,
@@ -80,7 +80,7 @@ export default function TherapySessionPage() {
   );
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gray-900 text-white overflow-hidden">
+    <div className="h-screen w-full flex flex-col bg-gray-900 text-white">
       <header className="fixed top-0 left-0 right-0 z-20 p-2 flex-shrink-0 bg-gray-900/80 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-2">
           <Link href="/dashboard" passHref>

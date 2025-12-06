@@ -201,10 +201,11 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
     return <DisclaimerDialog onAgree={() => setShowDisclaimer(false)} />;
   }
 
-  const MainContainer = isImmersive ? 'div' : ScrollArea;
-  const mainContainerProps = isImmersive ? 
-    { className: "flex-1 chat-background-pattern pb-24 pt-16" } : 
-    { className: "flex-1 chat-background-pattern pb-24 pt-16" };
+  const MainContainer = ScrollArea;
+  const mainContainerProps = { 
+    className: "flex-1 chat-background-pattern pb-24 pt-16" 
+  };
+
 
   return (
     <div className={cn("h-screen flex flex-col", isImmersive ? "bg-gray-900" : "bg-muted/20")}>
