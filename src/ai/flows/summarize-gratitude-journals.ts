@@ -9,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 
 const JournalEntrySchema = z.object({
   date: z.string().describe("The date of the entry in YYYY-MM-DD format."),

@@ -9,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 
 const MoodObjectSchema = z.object({
   mood: z.string().describe("The user's reported mood (e.g., 'Good', 'Awful')."),

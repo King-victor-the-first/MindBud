@@ -10,7 +10,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 
 const ModerateGroupChatMessageInputSchema = z.object({
   message: z.string().describe('The chat message to moderate.'),

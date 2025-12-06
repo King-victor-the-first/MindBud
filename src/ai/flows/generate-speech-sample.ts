@@ -10,7 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 import wav from 'wav';
 import { googleAI } from '@genkit-ai/google-genai';
 
