@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Summarizes user activity logs using AI to provide insights into how activities affect mood and well-being.
@@ -8,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'genkit/zod';
 
 const SummarizeActivityLogsInputSchema = z.object({
   mood: z.string().describe("The user's reported mood for the day."),

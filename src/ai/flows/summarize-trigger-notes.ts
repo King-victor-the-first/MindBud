@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Summarizes a list of user-provided notes into a concise theme.
@@ -8,7 +9,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'genkit/zod';
 
 const SummarizeTriggerNotesInputSchema = z.object({
   notes: z.array(z.string()).describe('A list of short text notes from a user, explaining their mood.'),

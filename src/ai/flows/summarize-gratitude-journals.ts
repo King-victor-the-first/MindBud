@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Summarizes a user's gratitude journal entries to provide positive reinforcement and identify themes.
@@ -8,7 +9,7 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'genkit/zod';
 
 const JournalEntrySchema = z.object({
   date: z.string().describe("The date of the entry in YYYY-MM-DD format."),
