@@ -12,6 +12,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { MessageData } from 'genkit/ai';
+import wav from 'wav';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // --- SCHEMAS ---
 
@@ -93,6 +95,34 @@ const therapyConversationFlow = ai.defineFlow(
   }
 );
 
+async function toWav(
+  pcmData: Buffer,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.Writer({
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+
+    const bufs: any[] = [];
+    writer.on('error', reject);
+    writer.on('data', function (d) {
+      bufs.push(d);
+    });
+    writer.on('end', function () {
+      resolve(Buffer.concat(bufs).toString('base64'));
+    });
+
+    writer.write(pcmData);
+    writer.end();
+  });
+}
+
+
 // This is a new, simplified flow just for generating audio.
 const GenerateSpeechInputSchema = z.object({
     text: z.string(),
@@ -114,7 +144,7 @@ const generateSpeechFlow = ai.defineFlow(
   },
   async (input) => {
     const ttsResponse = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
+      model: googleAI.model('gemini-2.5-flash-preview-tts'),
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
@@ -127,13 +157,18 @@ const generateSpeechFlow = ai.defineFlow(
     });
     
     const responseMedia = ttsResponse.media;
-    if (!responseMedia) {
+    if (!responseMedia?.url) {
       throw new Error('No media was returned from the TTS model.');
     }
     
-    // The TTS model already returns a base64 data URI, so no conversion is needed.
+    const audioBuffer = Buffer.from(
+      responseMedia.url.substring(responseMedia.url.indexOf(',') + 1),
+      'base64'
+    );
+    const audioBase64 = await toWav(audioBuffer);
+
     return {
-      audio: responseMedia.url,
+      audio: 'data:audio/wav;base64,' + audioBase64,
     };
   }
 );

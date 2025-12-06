@@ -16,7 +16,7 @@ import { googleAI } from '@genkit-ai/google-genai';
 
 const GenerateSpeechSampleInputSchema = z.object({
   text: z.string().describe('The text to be converted to speech.'),
-  voiceName: z.string().describe('The name of the voice to use (e.g., Alloy, Echo).'),
+  voiceName: z.string().describe('The name of the voice to use (e.g., Algenib, Achernar).'),
 });
 export type GenerateSpeechSampleInput = z.infer<typeof GenerateSpeechSampleInputSchema>;
 
@@ -76,7 +76,7 @@ const generateSpeechSampleFlow = ai.defineFlow(
       prompt: input.text,
     });
 
-    if (!media) {
+    if (!media?.url) {
       throw new Error('No media was returned from the TTS model.');
     }
 
