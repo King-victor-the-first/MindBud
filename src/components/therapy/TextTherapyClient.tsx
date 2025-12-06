@@ -1,17 +1,17 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { therapyConversation } from "@/ai/flows/therapy-conversation";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
+import { therapyConversation, generateSpeech } from "@/ai/flows/therapy-conversation";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, serverTimestamp, addDoc, doc } from "firebase/firestore";
+import { collection, query, orderBy, serverTimestamp, addDoc } from "firebase/firestore";
 import type { TherapyMessage } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Send, Mic, ArrowLeft, BrainCircuit } from "lucide-react";
+import { Loader2, Send, Mic, ArrowLeft, BrainCircuit, PlayCircle, Speaker } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
@@ -26,9 +26,12 @@ type TextTherapyClientProps = {
 export default function TextTherapyClient({ isImmersive = false }: TextTherapyClientProps) {
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(!isImmersive); // Only show disclaimer if not in immersive mode
+  const [showDisclaimer, setShowDisclaimer] = useState(!isImmersive);
   const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
+  
+  const [audioPlayingId, setAudioPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [isListening, setIsListening] = useState(false);
   const [speechApiSupported, setSpeechApiSupported] = useState(false);
@@ -41,6 +44,34 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
   
   const sessionId = params.id as string;
   const aiAvatar = PlaceHolderImages.find((p) => p.id === "therapy-session-ai-avatar") || { imageUrl: "/placeholder.svg", imageHint: "AI avatar"};
+
+  useEffect(() => {
+    // Initialize Audio element on client
+    audioRef.current = new Audio();
+    audioRef.current.onended = () => setAudioPlayingId(null);
+    audioRef.current.onpause = () => setAudioPlayingId(null);
+  }, []);
+
+  const playAudio = useCallback(async (messageId: string, text: string) => {
+      if (audioRef.current) {
+        if (audioPlayingId === messageId) {
+            audioRef.current.pause();
+            return;
+        }
+
+        setAudioPlayingId(messageId);
+        try {
+            const aiVoice = localStorage.getItem('aiVoice') || 'Algenib';
+            const { audio } = await generateSpeech({ text, voiceName: aiVoice });
+            audioRef.current.src = audio;
+            audioRef.current.play();
+        } catch (error) {
+            console.error("Error generating or playing audio:", error);
+            toast({ title: "Audio Error", description: "Could not play audio.", variant: "destructive" });
+            setAudioPlayingId(null);
+        }
+      }
+  }, [audioPlayingId, toast]);
 
   const messagesQuery = useMemoFirebase(() => {
     if (!user || !sessionId) return null;
@@ -118,7 +149,6 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
     setIsListening(!isListening);
   };
 
-
   const handleSend = async () => {
     if (!input.trim() || !user || !sessionId) return;
     const userMessage = input;
@@ -132,7 +162,6 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
       const result = await therapyConversation({
         history: history,
         message: userMessage,
-        voiceName: localStorage.getItem('aiVoice') || 'Algenib',
       });
       
       await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
@@ -151,21 +180,11 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
 
   // Initial greeting logic
   useEffect(() => {
-    const aiVoice = localStorage.getItem('aiVoice') || 'Algenib';
     if (!showDisclaimer && !messagesLoading && messages?.length === 0 && user) {
        (async () => {
-          setIsSending(true);
           const messagesCollectionRef = collection(firestore, `userProfiles/${user.uid}/therapySessions/${sessionId}/messages`);
-          try {
-            const result = await therapyConversation({ history: [], message: "", voiceName: aiVoice });
-            await addDoc(messagesCollectionRef, { role: 'model', content: [{text: result.response}], createdAt: serverTimestamp() });
-          } catch(e) {
-            console.error("Failed to generate initial greeting", e);
-            const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
-            await addDoc(messagesCollectionRef, { role: 'model', content: [{text: initialGreeting}], createdAt: serverTimestamp() });
-          } finally {
-            setIsSending(false);
-          }
+          const initialGreeting = "Hello, I'm Bud. I'm here to listen. How are you feeling today?";
+          await addDoc(messagesCollectionRef, { role: 'model', content: [{text: initialGreeting}], createdAt: serverTimestamp() });
       })();
     }
   }, [showDisclaimer, messages, messagesLoading, user, firestore, sessionId]);
@@ -233,13 +252,23 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
                   </Avatar>
                 )}
                 <div className={cn(
-                    "max-w-[75%] rounded-xl px-3 py-2 shadow-sm text-sm",
+                    "relative max-w-[75%] rounded-xl px-3 py-2 shadow-sm text-sm",
                     isUser
                       ? "bg-primary text-primary-foreground rounded-br-none"
                       : isImmersive ? "bg-gray-700 text-gray-200 rounded-bl-none" : "bg-card text-card-foreground rounded-bl-none"
                   )}
                 >
                   {textContent}
+                  {!isUser && textContent && (
+                    <Button
+                        size="icon"
+                        variant="ghost"
+                        className="absolute -bottom-2 -right-2 w-7 h-7 rounded-full bg-card/80 text-muted-foreground hover:bg-card hover:text-primary"
+                        onClick={() => playAudio(msg.id, textContent)}
+                    >
+                        {audioPlayingId === msg.id ? <Speaker className="w-4 h-4"/> : <PlayCircle className="w-4 h-4"/>}
+                    </Button>
+                  )}
                 </div>
               </div>
             );
