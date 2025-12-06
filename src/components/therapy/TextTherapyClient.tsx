@@ -201,7 +201,7 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
     return <DisclaimerDialog onAgree={() => setShowDisclaimer(false)} />;
   }
 
-  const MainContainer = ScrollArea;
+  const MainContainer = isImmersive ? ScrollArea : 'div';
   const mainContainerProps = { 
     className: "flex-1 chat-background-pattern pb-24 pt-16" 
   };
@@ -211,22 +211,23 @@ export default function TextTherapyClient({ isImmersive = false }: TextTherapyCl
     <div className={cn("h-screen flex flex-col", isImmersive ? "bg-gray-900" : "bg-muted/20")}>
       {!isImmersive && (
         <header className="fixed top-0 left-0 right-0 z-20 p-2 border-b flex-shrink-0 bg-background/80 backdrop-blur-sm md:ml-64">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2">
             <Link href="/therapy" passHref className="md:hidden">
               <Button variant="ghost" size="icon">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
             </Link>
-            <div className="text-center flex-1">
+            <div className="text-center flex-1 md:text-left md:pl-2">
               <h1 className="text-lg font-headline font-bold">AI Therapist</h1>
-              <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
+              <p className="text-xs text-muted-foreground flex items-center justify-center md:justify-start gap-1">
                 <BrainCircuit className="w-3 h-3 text-primary" />
                 Your Private Session
               </p>
             </div>
              <Link href={`/therapy-session/${sessionId}`} passHref>
-                <Button variant="outline" size="icon" aria-label="Start Live Voice Session">
-                    <Mic className="w-5 h-5 text-primary"/>
+                <Button variant="outline" size="sm">
+                    <Mic className="w-4 h-4 mr-2"/>
+                    Switch to Voice
                 </Button>
              </Link>
           </div>
