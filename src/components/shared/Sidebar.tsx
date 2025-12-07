@@ -31,7 +31,7 @@ const navItems = [
   },
   { href: '/insights', label: 'Insights', icon: LineChart },
   { href: '/settings', label: 'Settings', icon: Settings },
-  { href: '/apply-buddy', label: 'Apply Buddy', icon: HeartHandshake },
+  { href: '/apply-buddy', label: 'Become a Mind Buddy', icon: HeartHandshake },
 ];
 
 const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
