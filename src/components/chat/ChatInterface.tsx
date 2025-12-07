@@ -12,11 +12,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft, Mic, Mic2 } from "lucide-react";
+import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, ShieldCheck, ChevronDown, ArrowLeft, Mic, Mic2 } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
-import { uploadFile, getStorageInstance } from "@/firebase/storage";
 import { Badge } from "@/components/ui/badge";
 import type { UserProfile, ChatMessage } from "@/lib/types";
 import {
@@ -36,7 +35,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import SiriWave from "../shared/SiriWave";
 
 
 type ChatInterfaceProps = {
@@ -49,10 +47,8 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
   const [isSending, setIsSending] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const { user } = useUser();
@@ -139,14 +135,8 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setMediaFile(e.target.files[0]);
-    }
-  };
-
   const handleSend = async () => {
-    if ((!input.trim() && !mediaFile) || !user || !userProfile) return;
+    if (!input.trim() || !user || !userProfile) return;
 
     setIsSending(true);
 
@@ -163,7 +153,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
           variant: "destructive",
         });
         setInput("");
-        setMediaFile(null);
         setIsSending(false);
         return;
       }
@@ -180,24 +169,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
         isModerator,
         isDeleted: false,
       };
-      
-      if (mediaFile) {
-        try {
-          const storage = getStorageInstance();
-          const { downloadURL } = await uploadFile(storage, mediaFile, `chat/${user.uid}/${Date.now()}_${mediaFile.name}`);
-          newMessage.mediaUrl = downloadURL;
-          newMessage.mediaType = mediaFile.type;
-        } catch (uploadError) {
-           console.error("Error uploading file:", uploadError);
-           toast({
-              title: "Upload Failed",
-              description: "Could not upload the image. Please try again.",
-              variant: "destructive",
-           });
-           setIsSending(false);
-           return;
-        }
-      }
 
       if (replyTo) {
         newMessage.replyTo = {
@@ -212,7 +183,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
 
       setInput("");
       setReplyTo(null);
-      setMediaFile(null);
 
     } catch (error) {
       console.error("Error sending message:", error);
@@ -321,10 +291,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                                 </div>
                             )}
                             
-                            {msg.mediaUrl && !msg.isDeleted && msg.mediaType?.startsWith('image/') && (
-                                <NextImage src={msg.mediaUrl} alt="Shared media" width={200} height={200} className="rounded-md mb-2 object-cover" />
-                            )}
-
                             <p className={cn("text-sm pb-4 pr-10", msg.isDeleted && "pb-0 pr-0")}>{msg.message}</p>
                             
                             {!msg.isDeleted && msg.createdAt && (
@@ -403,28 +369,7 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                 </Button>
             </div>
         )}
-        {mediaFile && (
-            <div className="flex items-center justify-between p-2 mb-2 bg-muted rounded-md text-sm mx-2">
-                <div>
-                    <p className="font-semibold">Attachment</p>
-                    <p className="text-xs truncate text-muted-foreground">{mediaFile.name}</p>
-                </div>
-                <Button variant="ghost" size="icon" onClick={() => setMediaFile(null)}>
-                    <X className="w-4 h-4" />
-                </Button>
-            </div>
-        )}
         <div className="flex items-center gap-2">
-           <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={loading}>
-            <Image className="w-5 h-5" />
-          </Button>
-          <Input 
-            type="file" 
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="hidden"
-            accept="image/*"
-          />
           <div className="relative flex-1">
             <Input
               placeholder="Type a supportive message..."
@@ -450,7 +395,7 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                 </Button>
             )}
           </div>
-          <Button onClick={handleSend} disabled={loading || (!input.trim() && !mediaFile)} size="icon">
+          <Button onClick={handleSend} disabled={loading || !input.trim()} size="icon">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
@@ -458,3 +403,4 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     </div>
   );
 }
+
