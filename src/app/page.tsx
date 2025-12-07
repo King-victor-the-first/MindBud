@@ -21,7 +21,7 @@ export default function LandingPage() {
               <Link href="#pricing">Plans</Link>
             </Button>
             <Button asChild>
-              <Link href="/login">Sign In</Link>
+              <Link href="/login">Login / Register</Link>
             </Button>
           </nav>
         </div>
