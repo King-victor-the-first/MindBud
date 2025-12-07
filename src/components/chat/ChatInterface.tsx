@@ -36,6 +36,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import SiriWave from "../shared/SiriWave";
 
 
 type ChatInterfaceProps = {
@@ -262,7 +263,8 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
               </p>
             </div>
              <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={onStartVoiceSession} disabled={loading}>
-                <Mic className="w-4 h-4 md:mr-2"/>
+                <div className="md:hidden"><SiriWave isActive={true} /></div>
+                <Mic className="w-4 h-4 hidden md:inline-block md:mr-2"/>
                 <span className="hidden md:inline">Start a Live Session</span>
             </Button>
          </div>
@@ -456,6 +458,8 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     </div>
   );
 }
+
+    
 
     
 
