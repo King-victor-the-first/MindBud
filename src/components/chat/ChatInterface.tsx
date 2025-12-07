@@ -261,8 +261,10 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                   Anonymous & Moderated
               </p>
             </div>
-            {/* Placeholder for potential actions on the right */}
-            <div className="w-10 h-10 md:hidden"/>
+             <Button variant="outline" size="sm" onClick={onStartVoiceSession} disabled={loading}>
+                <Mic className="w-4 h-4 mr-2"/>
+                Start Live Session
+            </Button>
          </div>
        </div>
 
@@ -446,19 +448,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                 </Button>
             )}
           </div>
-          <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={onStartVoiceSession} disabled={loading} aria-label="Start Live Voice Session">
-                        <Mic className="w-5 h-5 text-primary"/>
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Start Live Voice Session</p>
-                </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
           <Button onClick={handleSend} disabled={loading || (!input.trim() && !mediaFile)} size="icon">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
