@@ -157,7 +157,7 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
         return;
       }
       
-      const displayName = userProfile.firstName ? `${userProfile.firstName} ${userProfile.lastName?.[0] || ''}.` : user.displayName || 'Anonymous';
+      const displayName = userProfile.username || 'Anonymous';
       const isModerator = userProfile.isModerator === true;
 
       const newMessage: Omit<ChatMessage, 'id' | 'mediaUrl' | 'mediaType'> & { mediaUrl?: string, mediaType?: string } = {
@@ -404,3 +404,6 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
   );
 }
 
+
+
+    

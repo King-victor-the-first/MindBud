@@ -28,6 +28,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -43,8 +44,7 @@ import type { UserProfile } from '@/lib/types';
 
 const signUpSchema = z
   .object({
-    firstName: z.string().min(1, { message: 'First name is required' }),
-    lastName: z.string().min(1, { message: 'Last name is required' }),
+    username: z.string().min(2, { message: 'Username must be at least 2 characters' }),
     email: z.string().email({ message: 'Invalid email address' }),
     password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
     confirmPassword: z.string(),
@@ -89,8 +89,7 @@ export default function LoginPage() {
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      firstName: '',
-      lastName: '',
+      username: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -147,8 +146,7 @@ export default function LoginPage() {
 
       const userProfile: UserProfile = {
         id: user.uid,
-        firstName: values.firstName,
-        lastName: values.lastName,
+        username: values.username,
         email: values.email,
         isModerator: isSuperAdmin,
       };
@@ -208,14 +206,11 @@ export default function LoginPage() {
       const isSuperAdmin = user.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
 
       if (!docSnap.exists()) {
-        const displayName = user.displayName || '';
-        const [firstName, ...lastNameParts] = displayName.split(' ');
-        const lastName = lastNameParts.join(' ');
+        const displayName = user.displayName || 'Anonymous';
 
         const userProfile: UserProfile = {
           id: user.uid,
-          firstName: firstName,
-          lastName: lastName,
+          username: displayName,
           email: user.email,
           isModerator: isSuperAdmin,
         };
@@ -256,8 +251,7 @@ export default function LoginPage() {
       if (!docSnap.exists()) {
         const userProfile: UserProfile = {
           id: user.uid,
-          firstName: 'Anonymous',
-          lastName: 'User',
+          username: 'Anonymous User',
           email: null,
           isModerator: false,
         };
@@ -393,34 +387,22 @@ export default function LoginPage() {
                   onSubmit={signUpForm.handleSubmit(handleSignUp)}
                   className="space-y-4"
                 >
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={signUpForm.control}
-                      name="firstName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="John" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={signUpForm.control}
-                      name="lastName"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={signUpForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., HappyUser123" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          This is your display name. It does not need to be your real name.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <FormField
                     control={signUpForm.control}
                     name="email"
@@ -473,6 +455,8 @@ export default function LoginPage() {
     </div>
   );
 }
+    
+
     
 
     

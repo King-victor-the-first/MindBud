@@ -46,8 +46,7 @@ export interface ScheduledSession {
 
 export interface UserProfile {
   id: string;
-  firstName: string;
-  lastName: string;
+  username: string;
   email: string;
   isModerator?: boolean;
   presence?: {
@@ -108,3 +107,5 @@ export interface TherapyMessage {
 export interface DailyInsight {
     insight: string;
 }
+
+    

@@ -39,19 +39,19 @@ export default function WelcomeHeader() {
   
   const { data: recentMoods, isLoading: moodsLoading } = useCollection<MoodEntry>(recentMoodsQuery);
 
-  const getFirstName = () => {
+  const getDisplayName = () => {
     if (userProfile) {
-      return userProfile.firstName;
+      return userProfile.username;
     }
     if (user && user.displayName) {
-      return user.displayName.split(' ')[0];
+      return user.displayName;
     }
     return "User";
   };
   
   const getInitials = () => {
-    if (userProfile) {
-        return `${userProfile.firstName?.[0] || ''}${userProfile.lastName?.[0] || ''}`;
+    if (userProfile && userProfile.username) {
+        return userProfile.username.substring(0, 2).toUpperCase();
     }
     if (user && user.displayName) {
       return user.displayName.split(' ').map(n => n[0]).join('');
@@ -63,7 +63,7 @@ export default function WelcomeHeader() {
     if (userProfile && recentMoods && !moodsLoading) {
       setIsInsightLoading(true);
       generateDailyInsight({
-        userName: userProfile.firstName,
+        userName: userProfile.username,
         recentMoods: recentMoods.map(m => ({ mood: m.mood, date: m.createdAt?.toDate().toISOString() || new Date().toISOString() }))
       }).then(result => {
         setInsight(result.insight);
@@ -86,7 +86,7 @@ export default function WelcomeHeader() {
         <div className="flex justify-between items-start">
             <div>
                 <h1 className="text-2xl sm:text-3xl font-headline font-bold text-foreground">
-                Good Morning, {getFirstName()}
+                Good Morning, {getDisplayName()}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                 Welcome to MindBud - Your AI powered mental wellness companion  
@@ -132,3 +132,5 @@ export default function WelcomeHeader() {
     </div>
   );
 }
+
+    
