@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft, Mic } from "lucide-react";
+import { Send, Loader2, MoreHorizontal, Trash2, Reply, X, Image, ShieldCheck, ChevronDown, ArrowLeft, Mic, Mic2 } from "lucide-react";
 import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from "@/firebase";
 import { collection, query, orderBy, serverTimestamp, doc } from "firebase/firestore";
 import { addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase/non-blocking-updates";
@@ -262,8 +262,8 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                   Anonymous & Moderated
               </p>
             </div>
-             <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={onStartVoiceSession} disabled={loading}>
-                <div className="md:hidden"><SiriWave isActive={true} /></div>
+             <Button variant="outline" size="sm" className="md:w-auto md:px-3" onClick={onStartVoiceSession} disabled={loading}>
+                <div className="md:hidden"><Mic2 className="w-5 h-5"/></div>
                 <Mic className="w-4 h-4 hidden md:inline-block md:mr-2"/>
                 <span className="hidden md:inline">Start a Live Session</span>
             </Button>
@@ -458,9 +458,3 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     </div>
   );
 }
-
-    
-
-    
-
-    
