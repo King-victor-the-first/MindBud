@@ -260,13 +260,16 @@
     },
     "BuddyApplication": {
         "title": "Buddy Application",
-        "description": "An application from a professional therapist to become a Mind Buddy.",
+        "description": "An application from a professional or student to become a Mind Buddy.",
         "type": "object",
         "properties": {
             "userId": {"type": "string"},
+            "role": {"type": "string", "enum": ["professional", "student"]},
             "fullName": {"type": "string"},
             "email": {"type": "string", "format": "email"},
             "licenseNumber": {"type": "string"},
+            "university": {"type": "string"},
+            "programOfStudy": {"type": "string"},
             "specializations": {"type": "string"},
             "yearsExperience": {"type": "number"},
             "hoursPerWeek": {"type": "string"},
@@ -274,7 +277,7 @@
             "status": {"type": "string", "enum": ["pending", "approved", "rejected"]},
             "submittedAt": {"type": "string", "format": "date-time"}
         },
-        "required": ["userId", "fullName", "email", "licenseNumber", "specializations", "yearsExperience", "hoursPerWeek", "reasonToJoin", "status", "submittedAt"]
+        "required": ["userId", "role", "fullName", "email", "specializations", "yearsExperience", "hoursPerWeek", "reasonToJoin", "status", "submittedAt"]
     }
   },
   "auth": {
@@ -337,5 +340,3 @@
     }
   }
 }
-
-    
