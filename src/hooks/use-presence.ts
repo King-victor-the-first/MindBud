@@ -25,6 +25,7 @@ export function usePresence() {
     const rtdb = getDatabase();
     const myPresenceRef = ref(rtdb, `.info/connected`);
     const userStatusFirestoreRef = doc(firestore, 'userProfiles', user.uid);
+    const userRtdbStatusRef = ref(rtdb, `status/${user.uid}`);
 
     const onOnlineStatusChange = (snapshot: any) => {
       const isOnline = snapshot.val();
@@ -36,7 +37,7 @@ export function usePresence() {
 
       // Use onDisconnect to set the user's status to offline when they disconnect.
       // This is the most reliable way to catch browser closes.
-      onDisconnect(ref(rtdb, `status/${user.uid}`)).set({
+      onDisconnect(userRtdbStatusRef).set({
         state: 'offline',
         lastChanged: rtdbServerTimestamp(),
       }).catch((err) => {
@@ -44,7 +45,6 @@ export function usePresence() {
       });
 
       // Set the user's online status in the Realtime Database.
-      const userRtdbStatusRef = ref(rtdb, `status/${user.uid}`);
       set(userRtdbStatusRef, {
         state: 'online',
         lastChanged: rtdbServerTimestamp(),
@@ -63,6 +63,7 @@ export function usePresence() {
 
     // Also listen for document visibility changes
     const handleVisibilityChange = () => {
+      if (!user) return; // Guard against calls after logout
       if (document.visibilityState === 'hidden') {
          updateDocumentNonBlocking(userStatusFirestoreRef, {
             presence: {
@@ -78,7 +79,6 @@ export function usePresence() {
                 lastChanged: serverTimestamp(),
             }
         });
-        const userRtdbStatusRef = ref(rtdb, `status/${user.uid}`);
         set(userRtdbStatusRef, {
             state: 'online',
             lastChanged: rtdbServerTimestamp(),
@@ -93,18 +93,10 @@ export function usePresence() {
         rtdbListener();
         document.removeEventListener('visibilitychange', handleVisibilityChange);
 
-        // When the hook unmounts (e.g., user logs out), set status to offline
-        const userRtdbStatusRef = ref(rtdb, `status/${user.uid}`);
-        set(userRtdbStatusRef, {
-            state: 'offline',
-            lastChanged: rtdbServerTimestamp(),
-        });
-        updateDocumentNonBlocking(userStatusFirestoreRef, {
-            presence: {
-                state: 'offline',
-                lastChanged: serverTimestamp(),
-            }
-        });
+        // RTDB onDisconnect will handle setting the status to offline when the client
+        // connection is lost. We don't need to manually set it to offline here,
+        // as doing so during a logout can cause a race condition where the user
+        // is already unauthenticated, leading to a permission error.
     };
   }, [user, firestore]);
 }
