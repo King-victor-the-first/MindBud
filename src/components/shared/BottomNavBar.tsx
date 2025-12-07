@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Smile, ClipboardList, Bot, Settings, LineChart } from 'lucide-react';
+import { Home, Smile, ClipboardList, Bot, Settings, LineChart, HeartHandshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SiriWave from './SiriWave';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';

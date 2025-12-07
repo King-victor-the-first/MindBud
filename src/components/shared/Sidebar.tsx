@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Smile, ClipboardList, Bot, LogOut, Settings, Shield, LineChart } from 'lucide-react';
+import { Home, Smile, ClipboardList, Bot, LogOut, Settings, Shield, LineChart, HeartHandshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
@@ -31,6 +31,7 @@ const navItems = [
   },
   { href: '/insights', label: 'Insights', icon: LineChart },
   { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/apply-buddy', label: 'Apply Buddy', icon: HeartHandshake },
 ];
 
 const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
@@ -144,7 +145,7 @@ export default function Sidebar() {
                     href={item.href}
                     className={cn(
                         'flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200',
-                        isActive
+                        (isActive && item.href !== '/dashboard' && !pathname.startsWith('/dashboard/')) || (pathname === '/dashboard' && item.href === '/dashboard')
                         ? 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     )}
