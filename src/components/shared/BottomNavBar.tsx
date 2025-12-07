@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Smile, ClipboardList, Bot, Settings, LineChart, HeartHandshake } from 'lucide-react';
+import { Home, Smile, ClipboardList, Bot, Settings, LineChart, HeartHandshake, User, HandHeart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SiriWave from './SiriWave';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,11 +24,13 @@ export default function BottomNavBar() {
   const pathname = usePathname();
   const { count: unreadCount, hasMention } = useUnreadChatMessages();
   const [isHubOpen, setIsHubOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const handleHubItemClick = () => {
+  const handleMenuItemClick = () => {
     // Standard mobile breakpoint is 768px
     if (window.innerWidth < 768) {
       setIsHubOpen(false);
+      setIsSettingsOpen(false);
     }
   };
 
@@ -36,7 +38,12 @@ export default function BottomNavBar() {
     <footer className="fixed bottom-4 left-4 right-4 z-50 md:hidden">
       <nav className="max-w-md mx-auto grid grid-cols-5 items-center h-16 bg-card/95 backdrop-blur-sm border border-border/80 rounded-full shadow-lg">
         {navItems.map((item) => {
-          const isActive = (item.href === '/insights' && (pathname.startsWith('/insights') || pathname.startsWith('/activities'))) || (pathname.startsWith(item.href) && item.href !== '/insights') || (item.href === '/therapy' && pathname.startsWith('/chat'));
+          const isActive = 
+            (item.href === '/insights' && (pathname.startsWith('/insights') || pathname.startsWith('/activities'))) || 
+            (pathname.startsWith(item.href) && item.href !== '/insights' && item.href !== '/settings') || 
+            (item.href === '/therapy' && pathname.startsWith('/chat')) ||
+            (item.href === '/settings' && (pathname.startsWith('/settings') || pathname.startsWith('/apply-buddy')));
+
           if (item.icon === 'siri') {
             return (
               <div key={item.href} className="flex justify-center" style={{ gridColumn: '3' }}>
@@ -63,10 +70,10 @@ export default function BottomNavBar() {
                         </p>
                       </div>
                       <div className="grid gap-2">
-                        <Link href="/therapy" passHref onClick={handleHubItemClick}>
+                        <Link href="/therapy" passHref onClick={handleMenuItemClick}>
                            <Button variant={pathname.startsWith('/therapy') ? "default" : "outline"} className="w-full justify-start">AI Therapy Session</Button>
                         </Link>
-                        <Link href="/chat" passHref onClick={handleHubItemClick}>
+                        <Link href="/chat" passHref onClick={handleMenuItemClick}>
                           <div className="relative w-full">
                              <Button variant={pathname.startsWith('/chat') ? "default" : "outline"} className="w-full justify-start">
                                Support Circle
@@ -84,6 +91,48 @@ export default function BottomNavBar() {
                 </Popover>
               </div>
             );
+          }
+          
+          if (item.href === '/settings') {
+             return (
+                <div key={item.href} className="flex justify-center">
+                    <Popover open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                        <PopoverTrigger asChild>
+                             <button className={cn(
+                                'flex flex-col items-center justify-center gap-1 h-full w-full transition-colors duration-200',
+                                isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                              )}>
+                                <Settings className="w-6 h-6" strokeWidth={isActive ? 2.5 : 2} />
+                                <span className="text-xs font-medium">{item.label}</span>
+                            </button>
+                        </PopoverTrigger>
+                         <PopoverContent className="w-64 mb-2">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Settings & More</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                    Manage your account and contributions.
+                                    </p>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Link href="/settings" passHref onClick={handleMenuItemClick}>
+                                        <Button variant={pathname.startsWith('/settings') ? "default" : "outline"} className="w-full justify-start">
+                                            <User className="mr-2 h-4 w-4" />
+                                            Profile & Settings
+                                        </Button>
+                                    </Link>
+                                    <Link href="/apply-buddy" passHref onClick={handleMenuItemClick}>
+                                        <Button variant={pathname.startsWith('/apply-buddy') ? "default" : "outline"} className="w-full justify-start">
+                                            <HandHeart className="mr-2 h-4 w-4" />
+                                            Become a Mind Buddy
+                                        </Button>
+                                    </Link>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+             )
           }
 
           const Icon = item.icon;
