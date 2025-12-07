@@ -261,6 +261,24 @@
             }
         },
         "required": ["insight"]
+    },
+    "BuddyApplication": {
+        "title": "Buddy Application",
+        "description": "An application from a professional therapist to become a Mind Buddy.",
+        "type": "object",
+        "properties": {
+            "userId": {"type": "string"},
+            "fullName": {"type": "string"},
+            "email": {"type": "string", "format": "email"},
+            "licenseNumber": {"type": "string"},
+            "specializations": {"type": "string"},
+            "yearsExperience": {"type": "number"},
+            "hoursPerWeek": {"type": "string"},
+            "reasonToJoin": {"type": "string"},
+            "status": {"type": "string", "enum": ["pending", "approved", "rejected"]},
+            "submittedAt": {"type": "string", "format": "date-time"}
+        },
+        "required": ["userId", "fullName", "email", "licenseNumber", "specializations", "yearsExperience", "hoursPerWeek", "reasonToJoin", "status", "submittedAt"]
     }
   },
   "auth": {
@@ -314,6 +332,12 @@
         "$ref": "#/entities/TherapyMessage"
       },
       "description": "Stores individual messages for a specific AI therapy session."
+    },
+    "/buddyApplications/{applicationId}": {
+        "schema": {
+            "$ref": "#/entities/BuddyApplication"
+        },
+        "description": "Stores applications from therapists wanting to become Mind Buddies."
     }
   }
 }
