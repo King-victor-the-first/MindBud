@@ -67,8 +67,8 @@ export default function BuddyApplicationForm() {
     },
   });
 
-  const { isSubmitting, watch } = form.formState;
-  const role = watch("role");
+  const { isSubmitting } = form.formState;
+  const role = form.watch("role");
 
   const handleSubmit = async (values: z.infer<typeof applicationSchema>) => {
     if (!user) {
