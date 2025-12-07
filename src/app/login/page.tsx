@@ -13,6 +13,7 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   User,
+  signInAnonymously,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore, useUser } from '@/firebase';
@@ -37,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/shared/Logo';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User as UserIcon } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 
 const signUpSchema = z
@@ -242,6 +243,44 @@ export default function LoginPage() {
     }
   }
 
+  const handleAnonymousSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await signInAnonymously(auth);
+      const user = result.user;
+
+      const userDocRef = doc(firestore, 'userProfiles', user.uid);
+      const docSnap = await getDoc(userDocRef);
+
+      // Create a default profile if one doesn't exist for this anonymous user
+      if (!docSnap.exists()) {
+        const userProfile: UserProfile = {
+          id: user.uid,
+          firstName: 'Anonymous',
+          lastName: 'User',
+          email: null,
+          isModerator: false,
+        };
+        await setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
+      }
+
+      toast({
+        title: 'Signed In Anonymously',
+        description: "Welcome! You're continuing as a guest.",
+      });
+      // Let the useEffect hook handle redirection
+
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Anonymous Sign In Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onGoogleSignIn = () => handleSocialSignIn(new GoogleAuthProvider());
   const onAppleSignIn = () => handleSocialSignIn(new OAuthProvider('apple.com'));
 
@@ -322,14 +361,20 @@ export default function LoginPage() {
                 </div>
               </div>
               
-              <div className="flex justify-center gap-4">
-                <Button variant="outline" size="icon" onClick={onGoogleSignIn} disabled={loading} aria-label="Continue with Google">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button variant="outline" onClick={onGoogleSignIn} disabled={loading} aria-label="Continue with Google">
                   {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <GoogleIcon className="h-5 w-5" />}
+                  <span className="ml-2">Google</span>
                 </Button>
-                <Button variant="outline" size="icon" onClick={onAppleSignIn} disabled={loading} aria-label="Continue with Apple">
+                <Button variant="outline" onClick={onAppleSignIn} disabled={loading} aria-label="Continue with Apple">
                   {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <AppleIcon className="h-5 w-5" />}
+                   <span className="ml-2">Apple</span>
                 </Button>
               </div>
+               <Button variant="secondary" className="w-full" onClick={handleAnonymousSignIn} disabled={loading}>
+                <UserIcon className="mr-2 h-4 w-4" />
+                Continue as Guest
+              </Button>
 
             </CardContent>
           </Card>
@@ -428,5 +473,6 @@ export default function LoginPage() {
     </div>
   );
 }
+    
 
     
