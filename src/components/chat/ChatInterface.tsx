@@ -263,7 +263,7 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
             </div>
              <Button variant="outline" size="sm" onClick={onStartVoiceSession} disabled={loading}>
                 <Mic className="w-4 h-4 mr-2"/>
-                Start Live Session
+                Start a Live Session
             </Button>
          </div>
        </div>
@@ -456,3 +456,5 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     </div>
   );
 }
+
+    
