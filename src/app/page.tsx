@@ -131,7 +131,7 @@ export default function LandingPage() {
                   <li className="flex items-center gap-3"><Briefcase className="w-5 h-5 text-primary" />Custom Onboarding & Support</li>
                 </ul>
                 <Button size="lg" variant="outline" asChild className="w-full">
-                  <Link href="mailto:victorehebhoria@gmail.com?subject=MindBud%20for%20Business%20Inquiry">Contact Sales</Link>
+                  <Link href="/contact">Contact Sales</Link>
                 </Button>
               </div>
             </div>
