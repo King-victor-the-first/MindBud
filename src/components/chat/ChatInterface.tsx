@@ -261,9 +261,9 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
                   Anonymous & Moderated
               </p>
             </div>
-             <Button variant="outline" size="sm" onClick={onStartVoiceSession} disabled={loading}>
-                <Mic className="w-4 h-4 mr-2"/>
-                Start a Live Session
+             <Button variant="outline" size="icon" className="md:w-auto md:px-3" onClick={onStartVoiceSession} disabled={loading}>
+                <Mic className="w-4 h-4 md:mr-2"/>
+                <span className="hidden md:inline">Start a Live Session</span>
             </Button>
          </div>
        </div>
@@ -456,5 +456,7 @@ export default function ChatInterface({ onStartVoiceSession }: ChatInterfaceProp
     </div>
   );
 }
+
+    
 
     
