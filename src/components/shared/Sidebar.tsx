@@ -61,25 +61,34 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  const getFirstName = () => {
-    if (userProfile) return userProfile.firstName;
-    if (user && user.displayName) return user.displayName.split(' ')[0];
+  const getUsername = () => {
+    if (userProfile?.username) {
+        return userProfile.username;
+    }
+    if (user?.displayName) {
+        return user.displayName.split(' ')[0];
+    }
     return "User";
   };
   
   const getInitials = () => {
-    if (userProfile) return `${userProfile.firstName?.[0] || ''}${userProfile.lastName?.[0] || ''}`;
-    if (user && user.displayName) return user.displayName.split(' ').map(n => n[0]).join('');
+    if (userProfile?.username) {
+        return userProfile.username.substring(0, 2).toUpperCase();
+    }
+    if (user && user.displayName) {
+        return user.displayName.split(' ').map(n => n[0]).join('');
+    }
     return "U";
   }
 
   const getRoleText = () => {
     if (isSuperAdmin) return "Super Admin";
     if (isModerator) return "Moderator";
-    return "Student";
+    return null;
   }
 
   const allNavItems = isModerator ? [...navItems, adminNavItem] : navItems;
+  const roleText = getRoleText();
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen p-4 bg-card border-r fixed top-0 left-0 sidebar-background-pattern">
@@ -169,8 +178,8 @@ export default function Sidebar() {
                     )}
                   </Avatar>
                   <div>
-                      <p className="font-semibold text-sm">{getFirstName()}</p>
-                      <p className="text-xs text-muted-foreground">{getRoleText()}</p>
+                      <p className="font-semibold text-sm">{getUsername()}</p>
+                      {roleText && <p className="text-xs text-muted-foreground">{roleText}</p>}
                   </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">

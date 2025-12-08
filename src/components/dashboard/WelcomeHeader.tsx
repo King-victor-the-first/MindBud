@@ -39,7 +39,7 @@ export default function WelcomeHeader() {
   
   const { data: recentMoods, isLoading: moodsLoading } = useCollection<MoodEntry>(recentMoodsQuery);
 
-  const getDisplayName = () => {
+  const getUsername = () => {
     if (userProfile?.username) {
         return userProfile.username;
     }
@@ -60,14 +60,16 @@ export default function WelcomeHeader() {
   }
 
   useEffect(() => {
+    // Wait until both profile and mood loading states are settled
     if (isProfileLoading || moodsLoading) {
       return;
     }
-
-    setIsInsightLoading(true);
     
-    // Determine username, providing a fallback for guests.
+    // Determine username, providing a fallback for guests or new users.
     const userName = userProfile?.username || "User";
+
+    // Set loading to true right before the async call
+    setIsInsightLoading(true);
 
     generateDailyInsight({
       userName: userName,
@@ -79,8 +81,10 @@ export default function WelcomeHeader() {
       setInsight(result.insight);
     }).catch(err => {
       console.error("Error generating insight:", err);
-      setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
+      // Set a safe, generic fallback message on error
+      setInsight("Remember that asking for help is a sign of strength.");
     }).finally(() => {
+      // Set loading to false after the call is complete
       setIsInsightLoading(false);
     });
 
@@ -92,7 +96,7 @@ export default function WelcomeHeader() {
         <div className="flex justify-between items-start">
             <div>
                 <h1 className="text-2xl sm:text-3xl font-headline font-bold text-foreground">
-                Good Morning, {getDisplayName()}
+                Good Morning, {getUsername()}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                 Welcome to MindBud - Your AI powered mental wellness companion  
