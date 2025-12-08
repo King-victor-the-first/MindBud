@@ -1,7 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -52,6 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Checkbox } from '@/components/ui/checkbox';
 
 const signUpSchema = z
   .object({
@@ -59,6 +62,9 @@ const signUpSchema = z
     email: z.string().email({ message: 'Invalid email address' }),
     password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
     confirmPassword: z.string(),
+    terms: z.boolean().refine(val => val === true, {
+        message: "You must accept the terms and be 18 or older to continue.",
+    }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -114,6 +120,7 @@ export default function LoginPage() {
       email: '',
       password: '',
       confirmPassword: '',
+      terms: false,
     },
   });
 
@@ -552,6 +559,33 @@ export default function LoginPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={signUpForm.control}
+                      name="terms"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                           <FormControl>
+                            <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                            />
+                            </FormControl>
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>
+                                Accept terms and conditions
+                            </FormLabel>
+                            <FormDescription>
+                                By signing up, you confirm you are 18 years or older and agree to our{' '}
+                                <Link href="/terms-of-service" className="underline hover:text-primary" target="_blank">
+                                    Terms of Service
+                                </Link>
+                                .
+                            </FormDescription>
+                             <FormMessage />
+                          </div>
+                        </FormItem>
+                      )}
+                    />
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Create Account
@@ -603,3 +637,4 @@ export default function LoginPage() {
     </>
   );
 }
+
