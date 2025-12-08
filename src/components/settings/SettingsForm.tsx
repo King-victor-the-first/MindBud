@@ -201,15 +201,17 @@ export default function SettingsForm() {
                   </FormItem>
                 )}
               />
-               <FormItem>
-                <FormLabel>Account Status</FormLabel>
-                <FormControl>
-                    <Input value={userProfile?.isModerator ? "Moderator" : "Student"} disabled />
-                </FormControl>
-                <FormDescription>
-                    Your account status is managed by an administrator.
-                </FormDescription>
-              </FormItem>
+              {userProfile?.isModerator && (
+                <FormItem>
+                  <FormLabel>Account Status</FormLabel>
+                  <FormControl>
+                      <Input value={userProfile?.isModerator ? "Moderator" : "Student"} disabled />
+                  </FormControl>
+                  <FormDescription>
+                      Your account status is managed by an administrator.
+                  </FormDescription>
+                </FormItem>
+              )}
             </div>
 
             <Separator />
