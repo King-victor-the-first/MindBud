@@ -40,51 +40,50 @@ export default function WelcomeHeader() {
   const { data: recentMoods, isLoading: moodsLoading } = useCollection<MoodEntry>(recentMoodsQuery);
 
   const getDisplayName = () => {
-    if (userProfile) {
-      return userProfile.username;
+    if (userProfile?.username) {
+        return userProfile.username;
     }
-    if (user && user.displayName) {
-      return user.displayName;
+    if (user?.displayName) {
+        return user.displayName.split(' ')[0];
     }
     return "User";
   };
   
   const getInitials = () => {
-    if (userProfile && userProfile.username) {
+    if (userProfile?.username) {
         return userProfile.username.substring(0, 2).toUpperCase();
     }
-    if (user && user.displayName) {
+    if (user?.displayName) {
       return user.displayName.split(' ').map(n => n[0]).join('');
     }
     return "U";
   }
 
   useEffect(() => {
-    // Wait until both profile and mood data have finished loading.
     if (isProfileLoading || moodsLoading) {
       return;
     }
 
-    // Explicitly check that userProfile is available before calling the AI.
-    if (userProfile) {
-      setIsInsightLoading(true);
-      generateDailyInsight({
-        userName: userProfile.username,
-        recentMoods: (recentMoods || []).map(m => ({ mood: m.mood, date: m.createdAt?.toDate().toISOString() || new Date().toISOString() }))
-      }).then(result => {
-        setInsight(result.insight);
-      }).catch(err => {
-        console.error("Error generating insight:", err);
-        // Provide a safe, generic fallback message.
-        setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
-      }).finally(() => {
-        setIsInsightLoading(false);
-      });
-    } else {
-        // This case handles when loading is complete but there's no profile (e.g., new anonymous user).
-        setInsight("Welcome! Taking a moment to check in with yourself is a great first step on your wellness journey.");
-        setIsInsightLoading(false);
-    }
+    setIsInsightLoading(true);
+    
+    // Determine username, providing a fallback for guests.
+    const userName = userProfile?.username || "User";
+
+    generateDailyInsight({
+      userName: userName,
+      recentMoods: (recentMoods || []).map(m => ({ 
+        mood: m.mood, 
+        date: m.createdAt?.toDate().toISOString() || new Date().toISOString() 
+      }))
+    }).then(result => {
+      setInsight(result.insight);
+    }).catch(err => {
+      console.error("Error generating insight:", err);
+      setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
+    }).finally(() => {
+      setIsInsightLoading(false);
+    });
+
   }, [userProfile, isProfileLoading, recentMoods, moodsLoading]);
 
 
@@ -139,5 +138,3 @@ export default function WelcomeHeader() {
     </div>
   );
 }
-
-    
