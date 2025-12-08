@@ -72,15 +72,18 @@ export default function SettingsForm() {
         firstName: userProfile.firstName || "",
         lastName: userProfile.lastName || "",
         email: userProfile.email || "",
-        avatarUrl: userProfile.avatarUrl || "",
+        avatarUrl: userProfile.avatarUrl || `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user?.uid}`,
       });
+    } else if (user && !isProfileLoading) {
+        form.setValue('avatarUrl', `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.uid}`);
     }
+
     const savedVoice = localStorage.getItem('aiVoice') || 'Algenib';
     form.setValue('aiVoice', savedVoice);
 
     // Initialize Audio element on client
     audioRef.current = new Audio();
-  }, [userProfile, form]);
+  }, [userProfile, user, isProfileLoading, form]);
   
   const { isSubmitting } = form.formState;
 
@@ -90,7 +93,7 @@ export default function SettingsForm() {
     try {
         const userDocRef = doc(firestore, 'userProfiles', user.uid);
         
-        const updatedProfile = {
+        const updatedProfile: Partial<UserProfile> = {
             firstName: values.firstName,
             lastName: values.lastName,
             avatarUrl: values.avatarUrl,
@@ -106,6 +109,7 @@ export default function SettingsForm() {
         title: "Settings Saved",
         description: "Your changes have been saved successfully.",
       });
+      form.reset(values, { keepDirty: false });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -140,7 +144,6 @@ export default function SettingsForm() {
   }
   
   const generateNewAvatar = () => {
-    if (!user) return;
     const newAvatarUrl = `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${crypto.randomUUID()}`;
     form.setValue('avatarUrl', newAvatarUrl, { shouldDirty: true });
   }
@@ -190,7 +193,7 @@ export default function SettingsForm() {
                                 </div>
                             </FormControl>
                             <FormDescription>
-                                Click the button to generate a new random avatar. No uploads are allowed.
+                                Click the button to generate a new random avatar. This will be saved when you save your profile changes.
                             </FormDescription>
                             <FormMessage />
                         </FormItem>
