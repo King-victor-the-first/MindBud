@@ -1,3 +1,4 @@
+
 import SafetyPlanForm from "@/components/settings/SafetyPlanForm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -8,9 +9,9 @@ export default function SafetyPlanPage() {
     <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <Link href="/settings" passHref>
-            <Button variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4"/>
-                Back to Settings
+            <Button variant="outline" size="icon">
+                <ArrowLeft className="h-4 w-4"/>
+                <span className="sr-only">Back to Settings</span>
             </Button>
         </Link>
       </div>
