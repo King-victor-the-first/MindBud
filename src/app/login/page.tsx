@@ -14,6 +14,7 @@ import {
   OAuthProvider,
   User,
   signInAnonymously,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth, useFirestore, useUser } from '@/firebase';
@@ -41,6 +42,16 @@ import { Logo } from '@/components/shared/Logo';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Loader2, User as UserIcon } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const signUpSchema = z
   .object({
@@ -58,6 +69,11 @@ const signInSchema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().min(1, { message: 'Password is required' }),
 });
+
+const resetPasswordSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+});
+
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg {...props} viewBox="0 0 48 48">
@@ -80,6 +96,8 @@ const SUPER_ADMIN_EMAIL = 'victorehebhoria@gmail.com';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -101,6 +119,13 @@ export default function LoginPage() {
     defaultValues: {
       email: '',
       password: '',
+    },
+  });
+  
+  const resetPasswordForm = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: '',
     },
   });
 
@@ -275,6 +300,26 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async ({ email }: z.infer<typeof resetPasswordSchema>) => {
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Check your inbox for a link to reset your password.',
+      });
+      setIsResetPasswordOpen(false);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Password Reset Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const onGoogleSignIn = () => handleSocialSignIn(new GoogleAuthProvider());
   const onAppleSignIn = () => handleSocialSignIn(new OAuthProvider('apple.com'));
 
@@ -288,171 +333,223 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-       <div className="absolute top-8 left-8">
-        <Logo />
+    <>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+        <div className="absolute top-8 left-8">
+          <Logo />
+        </div>
+        <Tabs defaultValue="sign-in" className="w-full max-w-md">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="sign-in">Sign In</TabsTrigger>
+            <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
+          </TabsList>
+          <TabsContent value="sign-in">
+            <Card>
+              <CardHeader>
+                <CardTitle>Welcome Back</CardTitle>
+                <CardDescription>
+                  Sign in to your MindBud account to continue.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Form {...signInForm}>
+                  <form
+                    onSubmit={signInForm.handleSubmit(handleSignIn)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={signInForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="name@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signInForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                            <div className="flex justify-between items-center">
+                                <FormLabel>Password</FormLabel>
+                                <Button 
+                                    type="button" 
+                                    variant="link" 
+                                    className="p-0 h-auto text-xs"
+                                    onClick={() => {
+                                      resetPasswordForm.setValue('email', signInForm.getValues('email'));
+                                      setIsResetPasswordOpen(true)
+                                    }}
+                                >
+                                    Forgot Password?
+                                </Button>
+                            </div>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Sign In
+                    </Button>
+                  </form>
+                </Form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                      </span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Button variant="outline" onClick={onGoogleSignIn} disabled={loading} aria-label="Continue with Google">
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <GoogleIcon className="h-5 w-5" />}
+                    <span className="ml-2">Google</span>
+                  </Button>
+                  <Button variant="outline" onClick={onAppleSignIn} disabled={loading} aria-label="Continue with Apple">
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <AppleIcon className="h-5 w-5" />}
+                    <span className="ml-2">Apple</span>
+                  </Button>
+                </div>
+                <Button variant="secondary" className="w-full" onClick={handleAnonymousSignIn} disabled={loading}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  Continue as Guest
+                </Button>
+
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="sign-up">
+            <Card>
+              <CardHeader>
+                <CardTitle>Create an Account</CardTitle>
+                <CardDescription>
+                  Get started with your personal wellness companion.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...signUpForm}>
+                  <form
+                    onSubmit={signUpForm.handleSubmit(handleSignUp)}
+                    className="space-y-4"
+                  >
+                    <FormField
+                      control={signUpForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g., HappyUser123" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            This is your display name. It does not need to be your real name.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input placeholder="name@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={signUpForm.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Confirm Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="••••••••" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Create Account
+                    </Button>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-      <Tabs defaultValue="sign-in" className="w-full max-w-md">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="sign-in">Sign In</TabsTrigger>
-          <TabsTrigger value="sign-up">Sign Up</TabsTrigger>
-        </TabsList>
-        <TabsContent value="sign-in">
-          <Card>
-            <CardHeader>
-              <CardTitle>Welcome Back</CardTitle>
-              <CardDescription>
-                Sign in to your MindBud account to continue.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Form {...signInForm}>
-                <form
-                  onSubmit={signInForm.handleSubmit(handleSignIn)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={signInForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={signInForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
-                  </Button>
-                </form>
-              </Form>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
-                    Or continue with
-                    </span>
-                </div>
+       <AlertDialog open={isResetPasswordOpen} onOpenChange={setIsResetPasswordOpen}>
+        <AlertDialogContent>
+          <Form {...resetPasswordForm}>
+            <form onSubmit={resetPasswordForm.handleSubmit(handlePasswordReset)}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset Password</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Enter your email address and we'll send you a link to reset your password.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="py-4">
+                <FormField
+                  control={resetPasswordForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="name@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button variant="outline" onClick={onGoogleSignIn} disabled={loading} aria-label="Continue with Google">
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <GoogleIcon className="h-5 w-5" />}
-                  <span className="ml-2">Google</span>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <Button type="submit" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Send Reset Link
                 </Button>
-                <Button variant="outline" onClick={onAppleSignIn} disabled={loading} aria-label="Continue with Apple">
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin"/> : <AppleIcon className="h-5 w-5" />}
-                   <span className="ml-2">Apple</span>
-                </Button>
-              </div>
-               <Button variant="secondary" className="w-full" onClick={handleAnonymousSignIn} disabled={loading}>
-                <UserIcon className="mr-2 h-4 w-4" />
-                Continue as Guest
-              </Button>
-
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="sign-up">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create an Account</CardTitle>
-              <CardDescription>
-                Get started with your personal wellness companion.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...signUpForm}>
-                <form
-                  onSubmit={signUpForm.handleSubmit(handleSignUp)}
-                  className="space-y-4"
-                >
-                  <FormField
-                    control={signUpForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Username</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., HappyUser123" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          This is your display name. It does not need to be your real name.
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={signUpForm.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@example.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={signUpForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={signUpForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Account
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+              </AlertDialogFooter>
+            </form>
+          </Form>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
     
