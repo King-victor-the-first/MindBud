@@ -60,12 +60,12 @@ export default function WelcomeHeader() {
   }
 
   useEffect(() => {
-    // Ensure we don't run this until all data is loaded.
+    // Wait until both profile and mood data have finished loading.
     if (isProfileLoading || moodsLoading) {
       return;
     }
 
-    // Now we can safely check userProfile
+    // Explicitly check that userProfile is available before calling the AI.
     if (userProfile) {
       setIsInsightLoading(true);
       generateDailyInsight({
@@ -75,13 +75,14 @@ export default function WelcomeHeader() {
         setInsight(result.insight);
       }).catch(err => {
         console.error("Error generating insight:", err);
+        // Provide a safe, generic fallback message.
         setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
       }).finally(() => {
         setIsInsightLoading(false);
       });
     } else {
-        // Handle case with no user profile but data has loaded.
-        setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
+        // This case handles when loading is complete but there's no profile (e.g., new anonymous user).
+        setInsight("Welcome! Taking a moment to check in with yourself is a great first step on your wellness journey.");
         setIsInsightLoading(false);
     }
   }, [userProfile, isProfileLoading, recentMoods, moodsLoading]);
