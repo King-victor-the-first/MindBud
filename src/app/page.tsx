@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { ArrowRight, Bot, Users, BarChart2, ShieldCheck, Briefcase, Zap } from 'lucide-react';
 import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function LandingPage() {
+  const heroImage = PlaceHolderImages.find(p => p.id === 'landing-hero');
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-sm">
@@ -49,14 +52,18 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="flex justify-center">
-            <Image 
-              src="https://picsum.photos/seed/mind-hero/600/400"
-              alt="A person finding a moment of calm and clarity"
-              width={600}
-              height={400}
-              className="rounded-xl shadow-2xl"
-              data-ai-hint="calm clarity"
-            />
+            {heroImage ? (
+                <Image 
+                  src={heroImage.imageUrl}
+                  alt={heroImage.description}
+                  width={600}
+                  height={400}
+                  className="rounded-xl shadow-2xl"
+                  data-ai-hint={heroImage.imageHint}
+                />
+            ) : (
+                <div className="w-[600px] h-[400px] bg-muted rounded-xl shadow-2xl" />
+            )}
           </div>
         </section>
 

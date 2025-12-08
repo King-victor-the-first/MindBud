@@ -23,6 +23,12 @@
       "description": "The MindBud application logo",
       "imageUrl": "/mindbloomlogo.png",
       "imageHint": "MindBud logo"
+    },
+    {
+      "id": "landing-hero",
+      "description": "A person finding a moment of calm and clarity",
+      "imageUrl": "https://images.unsplash.com/photo-1607688387751-c1e95ae09a42?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxN3x8bWVudGFsJTIwaGVhbHRofGVufDB8fHx8MTc2NTE4ODE2OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "calm clarity"
     }
   ]
 }
