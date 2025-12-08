@@ -191,11 +191,15 @@ export default function LoginPage() {
       // await handleSuccessfulLogin(user);
 
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Sign Up Failed',
-        description: error.message || 'An unexpected error occurred.',
-      });
+        let description = 'An unexpected error occurred.';
+        if (error.code === 'auth/email-already-in-use') {
+            description = 'This email address is already in use by another account.';
+        }
+        toast({
+            variant: 'destructive',
+            title: 'Sign Up Failed',
+            description,
+        });
     } finally {
       setLoading(false);
     }
@@ -212,10 +216,14 @@ export default function LoginPage() {
       // Let the useEffect hook handle redirection
       // await handleSuccessfulLogin(userCredential.user);
     } catch (error: any) {
+      let description = 'An unexpected error occurred.';
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          description = 'Invalid email or password. Please try again.';
+      }
       toast({
         variant: 'destructive',
         title: 'Sign In Failed',
-        description: error.message || 'Invalid credentials.',
+        description,
       });
     } finally {
       setLoading(false);
@@ -313,10 +321,14 @@ export default function LoginPage() {
       });
       setIsResetPasswordOpen(false);
     } catch (error: any) {
+      let description = 'An unexpected error occurred.';
+      if (error.code === 'auth/user-not-found') {
+          description = 'No account was found with that email address.';
+      }
       toast({
         variant: 'destructive',
         title: 'Password Reset Failed',
-        description: error.message || 'An unexpected error occurred.',
+        description,
       });
     } finally {
       setLoading(false);
