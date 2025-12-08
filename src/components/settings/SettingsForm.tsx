@@ -14,17 +14,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, PlayCircle, ShieldCheck } from "lucide-react";
+import { Loader2, PlayCircle, ShieldCheck, RefreshCw } from "lucide-react";
 import type { UserProfile } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { generateSpeechSample } from "@/ai/flows/generate-speech-sample";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const profileSchema = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
   email: z.string().email({ message: "Invalid email" }).or(z.literal("")).optional(),
   aiVoice: z.string().optional(),
+  avatarUrl: z.string().url().optional(),
 });
 
 const availableVoices = [
@@ -58,8 +60,11 @@ export default function SettingsForm() {
       lastName: "",
       email: "",
       aiVoice: 'Algenib',
+      avatarUrl: "",
     },
   });
+  
+  const avatarUrl = form.watch("avatarUrl");
 
   useEffect(() => {
     if (userProfile) {
@@ -67,6 +72,7 @@ export default function SettingsForm() {
         firstName: userProfile.firstName || "",
         lastName: userProfile.lastName || "",
         email: userProfile.email || "",
+        avatarUrl: userProfile.avatarUrl || "",
       });
     }
     const savedVoice = localStorage.getItem('aiVoice') || 'Algenib';
@@ -87,6 +93,7 @@ export default function SettingsForm() {
         const updatedProfile = {
             firstName: values.firstName,
             lastName: values.lastName,
+            avatarUrl: values.avatarUrl,
         };
 
         setDocumentNonBlocking(userDocRef, updatedProfile, { merge: true });
@@ -131,6 +138,12 @@ export default function SettingsForm() {
         setPlayingVoice(null);
     }
   }
+  
+  const generateNewAvatar = () => {
+    if (!user) return;
+    const newAvatarUrl = `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${crypto.randomUUID()}`;
+    form.setValue('avatarUrl', newAvatarUrl, { shouldDirty: true });
+  }
 
 
   if (isProfileLoading) {
@@ -153,8 +166,40 @@ export default function SettingsForm() {
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleUpdateProfile)}
-            className="space-y-6"
+            className="space-y-8"
           >
+            <div className="space-y-6">
+                <FormField
+                    control={form.control}
+                    name="avatarUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Profile Picture</FormLabel>
+                            <FormControl>
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="w-20 h-20">
+                                        <AvatarImage src={field.value} alt="User Avatar" />
+                                        <AvatarFallback>
+                                            <Loader2 className="w-6 h-6 animate-spin" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <Button type="button" variant="outline" onClick={generateNewAvatar}>
+                                        <RefreshCw className="mr-2 h-4 w-4"/>
+                                        Generate New Avatar
+                                    </Button>
+                                </div>
+                            </FormControl>
+                            <FormDescription>
+                                Click the button to generate a new random avatar. No uploads are allowed.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+            <Separator />
+            
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Personal Information</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -205,7 +250,7 @@ export default function SettingsForm() {
                 <FormItem>
                   <FormLabel>Account Status</FormLabel>
                   <FormControl>
-                      <Input value={userProfile?.isModerator ? "Moderator" : "Student"} disabled />
+                      <Input value="Moderator" disabled />
                   </FormControl>
                   <FormDescription>
                       Your account status is managed by an administrator.
@@ -278,7 +323,7 @@ export default function SettingsForm() {
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
               </Button>

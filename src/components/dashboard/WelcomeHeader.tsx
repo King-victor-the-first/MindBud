@@ -53,22 +53,18 @@ export default function WelcomeHeader() {
     if (userProfile?.username) {
         return userProfile.username.substring(0, 2).toUpperCase();
     }
-    if (user?.displayName) {
-      return user.displayName.split(' ').map(n => n[0]).join('');
+    if (user && user.displayName) {
+        return user.displayName.split(' ').map(n => n[0]).join('');
     }
     return "U";
   }
 
   useEffect(() => {
-    // Wait until both profile and mood loading states are settled
     if (isProfileLoading || moodsLoading) {
       return;
     }
-    
-    // Determine username, providing a fallback for guests or new users.
-    const userName = userProfile?.username || "User";
 
-    // Set loading to true right before the async call
+    const userName = getUsername();
     setIsInsightLoading(true);
 
     generateDailyInsight({
@@ -81,10 +77,8 @@ export default function WelcomeHeader() {
       setInsight(result.insight);
     }).catch(err => {
       console.error("Error generating insight:", err);
-      // Set a safe, generic fallback message on error
       setInsight("Remember that asking for help is a sign of strength.");
     }).finally(() => {
-      // Set loading to false after the call is complete
       setIsInsightLoading(false);
     });
 
@@ -105,11 +99,8 @@ export default function WelcomeHeader() {
             <div className="flex items-center gap-4 md:hidden">
                 <ThemeToggle />
                 <Avatar className="h-12 w-12 sm:h-14 sm:w-14">
-                {user?.photoURL ? (
-                    <AvatarImage src={user.photoURL} alt="User Avatar" />
-                ) : (
+                    <AvatarImage src={userProfile?.avatarUrl} alt="User Avatar" />
                     <AvatarFallback>{getInitials()}</AvatarFallback>
-                )}
                 </Avatar>
             </div>
         </div>

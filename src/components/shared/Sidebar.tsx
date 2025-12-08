@@ -171,11 +171,8 @@ export default function Sidebar() {
              <div className="flex items-center justify-between border-t pt-4">
                 <div className='flex items-center gap-3'>
                   <Avatar className="h-10 w-10">
-                    {user?.photoURL ? (
-                        <AvatarImage src={user.photoURL} alt="User Avatar" />
-                    ) : (
-                      <AvatarFallback>{getInitials()}</AvatarFallback>
-                    )}
+                    <AvatarImage src={userProfile?.avatarUrl} alt="User Avatar" />
+                    <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                   <div>
                       <p className="font-semibold text-sm">{getUsername()}</p>

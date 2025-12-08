@@ -47,7 +47,10 @@ export interface ScheduledSession {
 export interface UserProfile {
   id: string;
   username: string;
-  email: string;
+  email: string | null;
+  avatarUrl?: string;
+  firstName?: string;
+  lastName?: string;
   isModerator?: boolean;
   presence?: {
     state: 'online' | 'offline';
@@ -107,5 +110,3 @@ export interface TherapyMessage {
 export interface DailyInsight {
     insight: string;
 }
-
-    

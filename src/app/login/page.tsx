@@ -176,6 +176,7 @@ export default function LoginPage() {
         id: user.uid,
         username: values.username,
         email: values.email,
+        avatarUrl: `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.uid}`,
         isModerator: isSuperAdmin,
       };
 
@@ -248,6 +249,7 @@ export default function LoginPage() {
           id: user.uid,
           username: displayName,
           email: user.email,
+          avatarUrl: `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.uid}`,
           isModerator: isSuperAdmin,
         };
         await setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
@@ -289,6 +291,7 @@ export default function LoginPage() {
           id: user.uid,
           username: 'Anonymous User',
           email: null,
+          avatarUrl: `https://api.dicebear.com/8.x/bottts-neutral/svg?seed=${user.uid}`,
           isModerator: false,
         };
         await setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
@@ -600,10 +603,3 @@ export default function LoginPage() {
     </>
   );
 }
-    
-
-    
-
-    
-
-    

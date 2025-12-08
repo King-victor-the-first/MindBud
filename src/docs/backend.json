@@ -16,6 +16,10 @@
           "format": "email",
           "description": "The user's email address."
         },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL for the user's avatar."
+        },
         "isModerator": {
             "type": "boolean",
             "description": "Indicates if the user has moderator privileges."
