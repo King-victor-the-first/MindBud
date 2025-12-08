@@ -26,7 +26,7 @@ export default function WelcomeHeader() {
     return doc(firestore, "userProfiles", user.uid);
   }, [firestore, user]);
 
-  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<UserProfile>(userProfileRef);
 
   const recentMoodsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -60,11 +60,17 @@ export default function WelcomeHeader() {
   }
 
   useEffect(() => {
-    if (userProfile && recentMoods && !moodsLoading) {
+    // Ensure we don't run this until all data is loaded.
+    if (isProfileLoading || moodsLoading) {
+      return;
+    }
+
+    // Now we can safely check userProfile
+    if (userProfile) {
       setIsInsightLoading(true);
       generateDailyInsight({
         userName: userProfile.username,
-        recentMoods: recentMoods.map(m => ({ mood: m.mood, date: m.createdAt?.toDate().toISOString() || new Date().toISOString() }))
+        recentMoods: (recentMoods || []).map(m => ({ mood: m.mood, date: m.createdAt?.toDate().toISOString() || new Date().toISOString() }))
       }).then(result => {
         setInsight(result.insight);
       }).catch(err => {
@@ -73,12 +79,12 @@ export default function WelcomeHeader() {
       }).finally(() => {
         setIsInsightLoading(false);
       });
-    } else if (!moodsLoading) {
-        // Handle case with no user profile or moods
+    } else {
+        // Handle case with no user profile but data has loaded.
         setInsight("Remember that asking for help is not a sign of weakness; it’s a sign of strength.");
         setIsInsightLoading(false);
     }
-  }, [userProfile, recentMoods, moodsLoading]);
+  }, [userProfile, isProfileLoading, recentMoods, moodsLoading]);
 
 
   return (
