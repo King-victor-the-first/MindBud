@@ -40,7 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/shared/Logo';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
-import { Loader2, User as UserIcon } from 'lucide-react';
+import { Loader2, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import type { UserProfile } from '@/lib/types';
 import {
   AlertDialog,
@@ -97,7 +97,10 @@ const SUPER_ADMIN_EMAIL = 'victorehebhoria@gmail.com';
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isResetPasswordOpen, setIsResetPasswordOpen] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -390,7 +393,18 @@ export default function LoginPage() {
                                 </Button>
                             </div>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <div className="relative">
+                                <Input type={showSignInPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                    onClick={() => setShowSignInPassword(prev => !prev)}
+                                >
+                                    {showSignInPassword ? <EyeOff /> : <Eye />}
+                                </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -482,7 +496,18 @@ export default function LoginPage() {
                         <FormItem>
                           <FormLabel>Password</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                            <div className="relative">
+                                <Input type={showSignUpPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                    onClick={() => setShowSignUpPassword(prev => !prev)}
+                                >
+                                    {showSignUpPassword ? <EyeOff /> : <Eye />}
+                                </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -494,8 +519,19 @@ export default function LoginPage() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="••••••••" {...field} />
+                           <FormControl>
+                            <div className="relative">
+                                <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 text-muted-foreground"
+                                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                                >
+                                    {showConfirmPassword ? <EyeOff /> : <Eye />}
+                                </Button>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -552,6 +588,8 @@ export default function LoginPage() {
     </>
   );
 }
+    
+
     
 
     
